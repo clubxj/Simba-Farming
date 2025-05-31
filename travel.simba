@@ -1,0 +1,418 @@
+{$INCLUDE_ONCE WaspLib/osrs.simba}
+
+type
+  ERSFarmingTravel = enum(
+    ICY_BASALT,
+
+    STONY_BASALT,
+
+    CATHERBY_TABLET,
+    CATHERBY_TELEPORT,
+    CATHERBY_POH_PORTAL,
+    CATHERBY_POH_NEXUS,
+
+    CAMELOT_TELEPORT,
+    CAMELOT_TABLET,
+    CAMELOT_POH_PORTAL,
+    CAMELOT_POH_NEXUS,
+
+    ARDOUGNE_FARM_CLOAK,
+
+    ARDOUGNE_MONESTARY_CLOAK,
+
+    XERIC_TALISMAN_GLADE,
+    HOSIDIOUS_TABLET,
+
+    OUTSIDE_POH,
+    HOSIDIOUS_CONSTRUCTION_CAPE,
+
+    FALADOR_FARM_EXPLORERS_RING,
+    DRAYNOR_GLORY,
+
+    FENKENSTRAIN_TELEPORT,
+    FENKENSTRAIN_TABLET,
+    FENKENSTRAIN_POH_PORTAL,
+    FENKENSTRAIN_POH_NEXUS,
+    ECTOPHIAL,
+
+    FARMING_GUILD_FARMING_CAPE,
+    FARMING_GUILD_SKILLS_NECKLACE,
+    FARMING_GUILD_POH_SPIRIT_TREE,
+
+    HARMONY_ISLAND_TELEPORT,
+    HARMONY_ISLAND_TABLET,
+    HARMONY_ISLAND_POH_PORTAL,
+    HARMONY_ISLAND_POH_NEXUS
+  );
+
+  TRSFarmingTravelHelper = record
+    const WEISS_MAP:              TBox = [ 7256, 34654,  7312, 34722];
+    const STRONGHOLD_MAP:         TBox = [ 7180, 35618,  7316, 35706];
+    const CAHTERBY_MAP:           TBox = [ 6896, 36494,  7364, 36730];
+    const ARDOUGNE_FARM_MAP:      TBox = [ 6440, 36886,  6696, 37298];
+    const ARDOUGNE_MONESTARY_MAP: TBox = [ 6268, 37478,  6556, 37614];
+    const HOSIDIOUS_MAP:          TBox = [ 2816, 36138,  2968, 36386];
+    const FALADOR_FARM_MAP:       TBox = [ 7728, 36866,  8320, 37474];
+    const PHASMATYS_FARM_MAP:     TBox = [10072, 36262, 10584, 36390];
+    const FARMING_GUILD_MAP:      TBox = [  796, 35338,  1144, 35582];
+    const HARMONY_ISLAND_MAP:     TBox = [11012, 38910, 11268, 39162];
+  end;
+
+  TRSFarmingTravel = record
+    TravelFunctions: array[ERSFarmingTravel] of function(attempts: Integer): Boolean of object;
+    Helper: TRSFarmingTravelHelper;
+  end;
+
+var FarmingTravel: TRSFarmingTravel;
+
+function TRSFarmingTravel.Travel(travelMethod: ERSFarmingTravel; attempts: Integer = 2): Boolean;
+begin
+  writeln travelmethod;
+  writeln @self.TravelFunctions[travelMethod];
+  Result := Self.TravelFunctions[travelMethod](attempts);
+end;
+
+procedure TRSFarmingTravel.Init();
+begin
+  Self.TravelFunctions[ERSFarmingTravel.ICY_BASALT                    ] := @Self.Helper._ICY_BASALT;
+  Self.TravelFunctions[ERSFarmingTravel.STONY_BASALT                  ] := @Self.Helper._STONY_BASALT;
+  Self.TravelFunctions[ERSFarmingTravel.CATHERBY_TABLET               ] := @Self.Helper._CATHERBY_TABLET;
+  Self.TravelFunctions[ERSFarmingTravel.CATHERBY_TELEPORT             ] := @Self.Helper._CATHERBY_TELEPORT;
+  Self.TravelFunctions[ERSFarmingTravel.CATHERBY_POH_PORTAL           ] := @Self.Helper._CATHERBY_POH_PORTAL;
+  Self.TravelFunctions[ERSFarmingTravel.CATHERBY_POH_NEXUS            ] := @Self.Helper._CATHERBY_POH_NEXUS;
+  Self.TravelFunctions[ERSFarmingTravel.CAMELOT_TELEPORT              ] := @Self.Helper._CAMELOT_TELEPORT;
+  Self.TravelFunctions[ERSFarmingTravel.CAMELOT_TABLET                ] := @Self.Helper._CAMELOT_TABLET;
+  Self.TravelFunctions[ERSFarmingTravel.CAMELOT_POH_PORTAL            ] := @Self.Helper._CAMELOT_POH_PORTAL;
+  Self.TravelFunctions[ERSFarmingTravel.CAMELOT_POH_NEXUS             ] := @Self.Helper._CAMELOT_POH_NEXUS;
+  Self.TravelFunctions[ERSFarmingTravel.ARDOUGNE_FARM_CLOAK           ] := @Self.Helper._ARDOUGNE_FARM_CLOAK;
+  Self.TravelFunctions[ERSFarmingTravel.ARDOUGNE_MONESTARY_CLOAK      ] := @Self.Helper._ARDOUGNE_MONESTARY_CLOAK;
+  Self.TravelFunctions[ERSFarmingTravel.XERIC_TALISMAN_GLADE          ] := @Self.Helper._XERIC_TALISMAN_GLADE;
+  Self.TravelFunctions[ERSFarmingTravel.HOSIDIOUS_TABLET              ] := @Self.Helper._HOSIDIOUS_TABLET;
+  Self.TravelFunctions[ERSFarmingTravel.OUTSIDE_POH                   ] := @Self.Helper._OUTSIDE_POH;
+  Self.TravelFunctions[ERSFarmingTravel.HOSIDIOUS_CONSTRUCTION_CAPE   ] := @Self.Helper._HOSIDIOUS_CONSTRUCTION_CAPE;
+  Self.TravelFunctions[ERSFarmingTravel.FALADOR_FARM_EXPLORERS_RING   ] := @Self.Helper._FALADOR_FARM_EXPLORERS_RING;
+  Self.TravelFunctions[ERSFarmingTravel.DRAYNOR_GLORY                 ] := @Self.Helper._DRAYNOR_GLORY;
+  Self.TravelFunctions[ERSFarmingTravel.FENKENSTRAIN_TELEPORT         ] := @Self.Helper._FENKENSTRAIN_TELEPORT;
+  Self.TravelFunctions[ERSFarmingTravel.FENKENSTRAIN_TABLET           ] := @Self.Helper._FENKENSTRAIN_TABLET;
+  Self.TravelFunctions[ERSFarmingTravel.FENKENSTRAIN_POH_PORTAL       ] := @Self.Helper._FENKENSTRAIN_POH_PORTAL;
+  Self.TravelFunctions[ERSFarmingTravel.FENKENSTRAIN_POH_NEXUS        ] := @Self.Helper._FENKENSTRAIN_POH_NEXUS;
+  Self.TravelFunctions[ERSFarmingTravel.ECTOPHIAL                     ] := @Self.Helper._ECTOPHIAL;
+  Self.TravelFunctions[ERSFarmingTravel.FARMING_GUILD_FARMING_CAPE    ] := @Self.Helper._FARMING_GUILD_FARMING_CAPE;
+  Self.TravelFunctions[ERSFarmingTravel.FARMING_GUILD_SKILLS_NECKLACE ] := @Self.Helper._FARMING_GUILD_SKILLS_NECKLACE;
+  Self.TravelFunctions[ERSFarmingTravel.FARMING_GUILD_POH_SPIRIT_TREE ] := @Self.Helper._FARMING_GUILD_POH_SPIRIT_TREE;
+  Self.TravelFunctions[ERSFarmingTravel.HARMONY_ISLAND_TELEPORT       ] := @Self.Helper._HARMONY_ISLAND_TELEPORT;
+  Self.TravelFunctions[ERSFarmingTravel.HARMONY_ISLAND_TABLET         ] := @Self.Helper._HARMONY_ISLAND_TABLET;
+  Self.TravelFunctions[ERSFarmingTravel.HARMONY_ISLAND_POH_PORTAL     ] := @Self.Helper._HARMONY_ISLAND_POH_PORTAL;
+  Self.TravelFunctions[ERSFarmingTravel.HARMONY_ISLAND_POH_NEXUS      ] := @Self.Helper._HARMONY_ISLAND_POH_NEXUS;
+end;
+
+procedure TRSFarmingTravelHelper._LoadMap(mapArea: TBox);
+begin
+  Map.AddEx([RSTranslator.Global2Chunk(mapArea.Expand(80))], [0]);
+end;
+
+function TRSFarmingTravelHelper._ConfirmTravel(mapArea: TBox): Boolean;
+begin
+  Result := SleepUntil(Map.Position in mapArea, Random(100, 600), 3000);
+end;
+
+function TRSFarmingTravelHelper._ItemTeleport(item: TRSItem; option: String; mapArea: TBox; attempts: Integer): Boolean;
+var
+  itemInterface: TRSItemInterface;
+  slotInterface: TRSSlotInterface;
+  attempt, slot: Integer;
+begin
+  Self._LoadMap(mapArea);
+  if mapArea.Contains(Map.Position) then
+    Exit(True);
+
+  if Inventory.IsOpen then
+  begin
+    itemInterface := Inventory.Items;
+    slotInterface := Inventory.Slots;
+  end else if Equipment.IsOpen then
+  begin
+    itemInterface := Equipment.Items;
+    slotInterface := Equipment.Slots;
+  end else if Inventory.Open then
+  begin
+    itemInterface := Inventory.Items;
+    slotInterface := Inventory.Slots;
+  end else if Equipment.Open then
+  begin
+    itemInterface := Equipment.Items;
+    slotInterface := Equipment.Slots;
+  end else
+    Exit;
+
+  for attempt := 1 to attempts do
+    if itemInterface.Find(item, slot) then
+    begin
+      slotInterface.Hover(slot);
+      Sleep(75);
+      if MainScreen.IsUpText(option) then
+      begin
+        Mouse.Click(EMouseButton.LEFT);
+        Exit(Self._ConfirmTravel(mapArea));
+      end else if ChooseOption.Open then
+      begin
+        if ChooseOption.Find([option], False, False) then
+          Exit(ChooseOption.Select(option, False, True) and Self._ConfirmTravel(mapArea))
+        else if ChooseOption.OpenSubmenu(True) then
+          Exit(ChooseOption.SelectSubmenuOption([option], False, True) and Self._ConfirmTravel(mapArea));
+      end;
+    end;
+
+  if Inventory.IsOpen and Equipment.Open then
+  begin
+    itemInterface := Equipment.Items;
+    slotInterface := Equipment.Slots;
+  end else if Equipment.IsOpen and Inventory.Open then
+  begin
+    itemInterface := Inventory.Items;
+    slotInterface := Inventory.Slots;
+  end else
+    Exit;
+
+  for attempt := 1 to attempts do
+    if itemInterface.Find(item, slot) then
+    begin
+      slotInterface.Hover(slot);
+      Sleep(75);
+      if MainScreen.IsUpText(option) then
+      begin
+        Mouse.Click(EMouseButton.LEFT);
+        Exit(Self._ConfirmTravel(mapArea));
+      end else if ChooseOption.Open then
+      begin
+        if ChooseOption.Find([option], False, False) then
+          Exit(ChooseOption.Select(option, False, True) and Self._ConfirmTravel(mapArea))
+        else if ChooseOption.OpenSubmenu(True) then
+          Exit(ChooseOption.SelectSubmenuOption([option], False, True) and Self._ConfirmTravel(mapArea));
+      end;
+    end;
+end;
+
+function TRSFarmingTravelHelper._MagicTeleport(spell: ERSSpell; option: String; mapArea: TBox; attempts: Integer): Boolean;
+var
+  attempt: Integer;
+begin
+  Self._LoadMap(mapArea);
+  if mapArea.Contains(Map.Position) then
+    Exit(True);
+
+  for attempt := 1 to attempts do
+  begin
+    if (Magic.GetSpellBook = ERSSpellBook.LUNAR) and not (spell in RS_LUNAR_SPELLS) then
+      if not (Magic.CastSpell(ERSSpell.SPELLBOOK_SWAP) and SleepUntil((Magic.GetSpellBook <> ERSSpellBook.LUNAR), Random(100, 800), 3000)) then
+        Continue;
+
+    if Magic.CastSpell(spell, option) and SleepUntil(mapArea.Contains(Map.Position), Random(100, 800), 2400) then
+      Exit(True);
+  end;
+end;
+
+function TRSFarmingTravelHelper._POHPortal(): Boolean;
+begin
+ raise 'POH teleports are not yet implemented';
+end;
+
+function TRSFarmingTravelHelper._POHNexus(): Boolean;
+begin
+  raise 'POH nexus is not yet implemented';
+end;
+
+function TRSFarmingTravelHelper._ICY_BASALT(attempts: Integer): Boolean;
+begin
+  Result := Self._ItemTeleport('Icy basalt', 'Teleport', TRSFarmingTravelHelper.WEISS_MAP, attempts);
+end;
+
+function TRSFarmingTravelHelper._STONY_BASALT(attempts: Integer): Boolean;
+const
+  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+begin
+  Result := Self._ItemTeleport('Stony basalt', 'Teleport', TRSFarmingTravelHelper.STRONGHOLD_MAP, attempts);
+end;
+
+function TRSFarmingTravelHelper._CATHERBY_TABLET(attempts: Integer): Boolean;
+const
+  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+begin
+  Result := Self._ItemTeleport('Catherby teleport', 'Teleport', TRSFarmingTravelHelper.CAHTERBY_MAP, attempts);
+end;
+
+function TRSFarmingTravelHelper._CATHERBY_TELEPORT(attempts: Integer): Boolean;
+const
+  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+begin
+  Result := Self._MagicTeleport(ERSSpell.CATHERBY_TELEPORT, 'Teleport', TRSFarmingTravelHelper.CAHTERBY_MAP, attempts);
+end;
+
+function TRSFarmingTravelHelper._CAMELOT_TABLET(attempts: Integer): Boolean;
+const
+  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+begin
+  Result := Self._ItemTeleport('Camelot teleport', 'Teleport', TRSFarmingTravelHelper.CAHTERBY_MAP, attempts);
+end;
+
+function TRSFarmingTravelHelper._CAMELOT_TELEPORT(attempts: Integer): Boolean;
+const
+  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+begin
+  Result := Self._MagicTeleport(ERSSpell.CAMELOT_TELEPORT, 'Teleport', TRSFarmingTravelHelper.CAHTERBY_MAP, attempts);
+end;
+
+function TRSFarmingTravelHelper._CATHERBY_POH_PORTAL(attempts: Integer): Boolean;
+begin
+  Result := Self._POHPortal();
+end;
+
+function TRSFarmingTravelHelper._CATHERBY_POH_NEXUS(attempts: Integer): Boolean;
+begin
+  Result := Self._POHNexus();
+end;
+
+function TRSFarmingTravelHelper._CAMELOT_POH_PORTAL(attempts: Integer): Boolean;
+begin
+  Result := Self._POHPortal();
+end;
+
+function TRSFarmingTravelHelper._CAMELOT_POH_NEXUS(attempts: Integer): Boolean;
+begin
+  Result := Self._POHNexus();
+end;
+
+function TRSFarmingTravelHelper._ARDOUGNE_FARM_CLOAK(attempts: Integer): Boolean;
+const
+  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+begin
+  Result := Self._ItemTeleport('Ardougne Farm Cloak', 'Teleport', TRSFarmingTravelHelper.ARDOUGNE_FARM_MAP, attempts);
+end;
+
+function TRSFarmingTravelHelper._ARDOUGNE_MONESTARY_CLOAK(attempts: Integer): Boolean;
+const
+  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+begin
+  Result := Self._ItemTeleport('Ardougne Monestary Cloak', 'Teleport', TRSFarmingTravelHelper.ARDOUGNE_MONESTARY_MAP, attempts);
+end;
+
+function TRSFarmingTravelHelper._HOSIDIOUS_TABLET(attempts: Integer): Boolean;
+const
+  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+begin
+  Result := Self._ItemTeleport('Hosidious Tablet', 'Teleport', TRSFarmingTravelHelper.HOSIDIOUS_MAP, attempts);
+end;
+
+function TRSFarmingTravelHelper._OUTSIDE_POH(attempts: Integer): Boolean;
+const
+  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+begin
+  Result := Self._ItemTeleport('Hosidious Tablet', 'Teleport', TRSFarmingTravelHelper.HOSIDIOUS_MAP, attempts);
+end;
+
+function TRSFarmingTravelHelper._HOSIDIOUS_CONSTRUCTION_CAPE(attempts: Integer): Boolean;
+const
+  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+begin
+  Result := Self._ItemTeleport('Hosidious Construction Cape', 'Teleport', TRSFarmingTravelHelper.HOSIDIOUS_MAP, attempts);
+end;
+
+function TRSFarmingTravelHelper._XERIC_TALISMAN_GLADE(attempts: Integer): Boolean;
+begin
+  Result := Self._ItemTeleport('Xeric''s talisman', 'Xeric''s Glade', TRSFarmingTravelHelper.HOSIDIOUS_MAP, attempts);
+end;
+
+function TRSFarmingTravelHelper._FALADOR_FARM_EXPLORERS_RING(attempts: Integer): Boolean;
+const
+  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+begin
+  Result := Self._ItemTeleport('Falador Farm Explorers Ring', 'Teleport', TRSFarmingTravelHelper.FALADOR_FARM_MAP, attempts);
+end;
+
+function TRSFarmingTravelHelper._DRAYNOR_GLORY(attempts: Integer): Boolean;
+const
+  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+begin
+  Result := Self._ItemTeleport('Draynor Glory', 'Teleport', TRSFarmingTravelHelper.FALADOR_FARM_MAP, attempts);
+end;
+
+function TRSFarmingTravelHelper._FENKENSTRAIN_TELEPORT(attempts: Integer): Boolean;
+const
+  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+begin
+  Result := Self._MagicTeleport(ERSSpell.FENKENSTRAINS_CASTLE_TELEPORT, 'Teleport', TRSFarmingTravelHelper.PHASMATYS_FARM_MAP, attempts);
+end;
+
+function TRSFarmingTravelHelper._FENKENSTRAIN_TABLET(attempts: Integer): Boolean;
+const
+  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+begin
+  Result := Self._ItemTeleport('Fenkenstrain Tablet', 'Teleport', TRSFarmingTravelHelper.PHASMATYS_FARM_MAP, attempts);
+end;
+
+function TRSFarmingTravelHelper._FENKENSTRAIN_POH_PORTAL(attempts: Integer): Boolean;
+begin
+  Result := Self._POHPortal();
+end;
+
+function TRSFarmingTravelHelper._FENKENSTRAIN_POH_NEXUS(attempts: Integer): Boolean;
+begin
+  Result := Self._POHNexus();
+end;
+
+function TRSFarmingTravelHelper._ECTOPHIAL(attempts: Integer): Boolean;
+const
+  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+begin
+  Result := Self._ItemTeleport('Ectophial', 'Teleport', TRSFarmingTravelHelper.PHASMATYS_FARM_MAP, attempts);
+end;
+
+function TRSFarmingTravelHelper._FARMING_GUILD_FARMING_CAPE(attempts: Integer): Boolean;
+const
+  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+begin
+  Result := Self._ItemTeleport('Farming Guild Farming Cape', 'Teleport', TRSFarmingTravelHelper.FARMING_GUILD_MAP, attempts);
+end;
+
+function TRSFarmingTravelHelper._FARMING_GUILD_SKILLS_NECKLACE(attempts: Integer): Boolean;
+const
+  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+begin
+  Result := Self._ItemTeleport('Farming Guild Skills Necklace', 'Teleport', TRSFarmingTravelHelper.FARMING_GUILD_MAP, attempts);
+end;
+
+function TRSFarmingTravelHelper._FARMING_GUILD_POH_SPIRIT_TREE(attempts: Integer): Boolean;
+const
+  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+begin
+  Result := Self._ItemTeleport('Farming Guild Skills Necklace', 'Teleport', TRSFarmingTravelHelper.FARMING_GUILD_MAP, attempts);
+end;
+
+function TRSFarmingTravelHelper._HARMONY_ISLAND_TELEPORT(attempts: Integer): Boolean;
+const
+  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+begin
+  Result := Self._MagicTeleport(ERSSpell.HARMONY_ISLAND_TELEPORT, 'Teleport', TRSFarmingTravelHelper.HARMONY_ISLAND_MAP, attempts);
+end;
+
+function TRSFarmingTravelHelper._HARMONY_ISLAND_TABLET(attempts: Integer): Boolean;
+const
+  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+begin
+  Result := Self._ItemTeleport('Harmony Island Tablet', 'Teleport', TRSFarmingTravelHelper.HARMONY_ISLAND_MAP, attempts);
+end;
+
+function TRSFarmingTravelHelper._HARMONY_ISLAND_POH_PORTAL(attempts: Integer): Boolean;
+begin
+  Result := Self._POHPortal();
+end;
+
+function TRSFarmingTravelHelper._HARMONY_ISLAND_POH_NEXUS(attempts: Integer): Boolean;
+begin
+  Result := Self._POHNexus();
+end;
+
+
+
+
+

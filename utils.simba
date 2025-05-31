@@ -1,0 +1,160 @@
+function ClusteredClickPattern(allSlots: TBoxArray; targetSlots: TIntegerArray): TIntegerArray;
+const
+  MIN_CLUSTER_SIZE = 2; MAX_CLUSTER_SIZE = 4; FIRST_CLICK_VARIATION_CHANCE = 10;
+  FIRST_CLICK_VARIATION_OPTIONS = 3; RANDOMNESS_FACTOR = 0.3; ADJACENT_SWAP_CHANCE = 30;
+  MAX_CLUSTER_DISTANCE = 2.5;
+var
+  i, j, start, next, size, idx, last, temp, gridCols: Integer;
+  used: array of Boolean; cluster: TIntegerArray; dist, minDist: Double;
+begin
+  SetLength(Result, Length(targetSlots));
+  if (Length(targetSlots) = 0) or (Length(allSlots) = 0) then Exit;
+  gridCols := 1;
+  for i := 1 to High(allSlots) do
+    if allSlots[i].Y1 = allSlots[0].Y1 then
+      Inc(gridCols);
+
+  SetLength(used, Length(targetSlots));
+  last := -1;
+  while idx < Length(targetSlots) do
+  begin
+    if last = -1 then
+    begin
+      start := 0;
+      if Random(100) < FIRST_CLICK_VARIATION_CHANCE then
+        start := Random(Min(FIRST_CLICK_VARIATION_OPTIONS, Length(targetSlots)))
+      else for i := 1 to High(targetSlots) do
+        if (targetSlots[i] mod gridCols < targetSlots[start] mod gridCols) or
+           ((targetSlots[i] mod gridCols = targetSlots[start] mod gridCols) and (targetSlots[i] div gridCols < targetSlots[start] div gridCols)) then
+            start := i;
+    end else begin
+      start := 0;
+      minDist := 999;
+      for i := 0 to High(targetSlots) do
+        if not used[i] then
+        begin
+          dist := Sqrt(Sqr((targetSlots[i] div gridCols) - (last div gridCols)) + Sqr((targetSlots[i] mod gridCols) - (last mod gridCols))) + Random * RANDOMNESS_FACTOR;
+          if dist < minDist then
+          begin
+            minDist := dist;
+            start := i;
+          end;
+        end;
+    end;
+
+    SetLength(cluster, 1);
+    cluster[0] := start;
+    used[start] := True;
+    size := Random(MAX_CLUSTER_SIZE - MIN_CLUSTER_SIZE + 1) + MIN_CLUSTER_SIZE;
+    while Length(cluster) < size do
+    begin
+      next := -1;
+      minDist := 999;
+      for i := 0 to High(targetSlots) do
+        if not used[i] then
+          for j := 0 to High(cluster) do
+          begin
+            dist := Sqrt(Sqr((targetSlots[i] div gridCols) - (targetSlots[cluster[j]] div gridCols)) + Sqr((targetSlots[i] mod gridCols) - (targetSlots[cluster[j]] mod gridCols)));
+            if (dist <= MAX_CLUSTER_DISTANCE) and (dist < minDist) then
+            begin
+              minDist := dist;
+              next := i;
+            end;
+          end;
+
+      if next = -1 then Break;
+      SetLength(cluster, Length(cluster) + 1);
+      cluster[High(cluster)] := next;
+      used[next] := True;
+    end;
+
+    if Length(cluster) > 1 then
+      case Random(100) of
+        0..74:
+        for i := 0 to High(cluster)-1 do for j := i+1 to High(cluster) do
+          if (targetSlots[cluster[i]] div gridCols > targetSlots[cluster[j]] div gridCols) or
+            ((targetSlots[cluster[i]] div gridCols = targetSlots[cluster[j]] div gridCols) and (targetSlots[cluster[i]] mod gridCols > targetSlots[cluster[j]] mod gridCols)) then
+          begin
+            temp := cluster[i];
+            cluster[i] := cluster[j];
+            cluster[j] := temp;
+          end;
+        75..94:
+        for i := 0 to High(cluster)-1 do for j := i+1 to High(cluster) do
+          if (targetSlots[cluster[i]] mod gridCols > targetSlots[cluster[j]] mod gridCols) or
+           ((targetSlots[cluster[i]] mod gridCols = targetSlots[cluster[j]] mod gridCols) and (targetSlots[cluster[i]] div gridCols > targetSlots[cluster[j]] div gridCols)) then
+          begin
+            temp := cluster[i];
+            cluster[i] := cluster[j];
+            cluster[j] := temp;
+          end;
+        95..99:
+        if (Length(cluster) > 2) and (Random(100) < ADJACENT_SWAP_CHANCE) then
+        begin
+          i := Random(Length(cluster)-1);
+          temp := cluster[i];
+          cluster[i] := cluster[i+1];
+          cluster[i+1] := temp;
+        end;
+      end;
+    for i := 0 to High(cluster) do
+    begin
+      Result[idx] := targetSlots[cluster[i]];
+      Inc(idx);
+    end;
+    if Length(cluster) > 0 then
+      last := targetSlots[cluster[High(cluster)]];
+  end;
+end;
+
+type
+  TRSItemFinderMatch = record
+    Match: TImageMatch;
+    Item: TRSItem;
+  end;
+
+  TRSItemFinderMatchArray = array of TRSItemFinderMatch;
+
+function TRSItemFinder.FindAll(items: TRSItemArray; boxes: TBoxArray; out matches: TRSItemFinderMatchArray): Boolean; overload;
+var
+  item: TRSItem;
+  results: TRSItemFinderMatchArray;
+  i: Integer;
+  img: TImage;
+  match: Single;
+  skip: TBooleanArray;
+begin
+  SetLength(skip, Length(boxes));
+
+  for item in items do
+  begin
+    item := LowerCase(item);
+    Self.ImageCompare.Filter := @Self.GetFilter(item);
+
+    for img in Self.GetImages(item) do
+      for i := 0 to High(boxes) do
+      begin
+        if skip[i] then Continue;
+        if not RSColors.HasItem(boxes[i]) then
+        begin
+          skip[i] := True;
+          Continue;
+        end;
+
+        match := Self.Similarity;
+        if Self.ImageCompare.Compare(img, boxes[i], match) then
+        begin
+          results += [[i, boxes[i], match], item];
+          skip[i] := True;
+        end;
+      end;
+
+    if results = [] then Exit;
+
+    matches += results;
+    results := [];
+  end;
+
+  Result := True;
+end;
+

@@ -1,0 +1,282 @@
+{$INCLUDE_ONCE WaspLib/osrs.simba}
+{$INCLUDE_ONCE utils.simba}
+
+type
+  ERSToolLeprechaunItem = enum(
+    FARMING_RAKE,
+    SEED_DIBBER,
+    SPADE,
+    SECATEURS,
+    WATERING_CAN,
+    GARDENING_TROWEL,
+    PLANT_CURE,
+    BOTTOMLESS_BUCKET,
+    EMPTY_BUCKET,
+    NORMAL_COMPOST,
+    SUPERCOMPOST,
+    ULTRACOMPOST
+  );
+
+  ERSToolLeprechaunInterface = enum(
+    STORAGE,
+    INVENTORY
+  );
+
+  TRSToolLeprechaun = record
+    NPC: TRSObject;
+    Bounds: TBox;
+    Title: TRSInterfaceTitle;
+    Buttons: array[ERSToolLeprechaunInterface] of array[ERSToolLeprechaunItem] of TRSButton;
+    const TITLE_TEXT = '';
+    const GRIMY_HERBS_START = 14;
+    const GRIMY_HERBS_END = 27;
+    const NOTABLE_ITEMS: TRSItemArray = [
+      'Guam leaf', 'Marrentill', 'Tarromin', 'Harralander', 'Ranarr weed', 'Toadflax',
+      'Irit leaf', 'Avantoe', 'Kwuarm', 'Snapdragon', 'Cadantine', 'Lantadyme', 'Dwarf weed',
+      'Tortstol',
+
+      'Grimy guam leaf', 'Grimy marrentill', 'Grimy tarromin', 'Grimy harralander',
+      'Grimy ranarr weed', 'Grimy toadflax', 'Grimy irit leaf', 'Grimy avantoe',
+      'Grimy kwuarm', 'Grimy snapdragon', 'Grimy cadantine', 'Grimy lantadyme',
+      'Grimy dwarf weed', 'Grimy torstol'
+
+      'Limpwurt root',
+
+      'Potato', 'Onion', 'Cabbage', 'Tomato', 'Sweetcorn', 'Strawberry', 'Watermelon',
+      'Snape grass',
+
+      'White berries',
+
+      'Cactus spine', 'Potato cactus',
+
+      'Giant seaweed'
+    ];
+
+
+  end;
+
+var
+  ToolLeprechaun: TRSToolLeprechaun;
+
+procedure TRSToolLeprechaun.SetupInterface();
+const
+  STO_SIZ: TPoint = [106, 58]; STO_SPAC: TPoint = [10, 7]; STO_OFF: TPoint = [19, 45];
+  INV_SIZ: TPoint = [ 92, 42]; INV_SPAC: TPoint = [ 3, 1]; INV_OFF: TPoint = [-2,  2];
+var
+  i: Integer;
+  topLeft: TPoint;
+begin
+  Self.Bounds := MSInterface.CreateBounds([0, 0, -1, 0], 492, 298);
+  Self.Title.Setup(Self.Bounds);
+
+  for i := 0 to Ord(High(ERSToolLeprechaunItem)) do
+  begin
+    topLeft := Self.Bounds.TopLeft;
+    topLeft.X += STO_OFF.X + ((i mod 4) * (STO_SIZ.X + STO_SPAC.X));
+    topLeft.Y += STO_OFF.Y + ((i div 4) * (STO_SIZ.Y + STO_SPAC.Y));
+    Self.Buttons[ERSToolLeprechaunInterface.STORAGE][i].Bounds := [topLeft.X, topLeft.Y, topLeft.X + STO_SIZ.X, topLeft.Y + STO_SIZ.Y];
+  end;
+
+  for i := 0 to Ord(High(ERSToolLeprechaunItem)) do
+  begin
+    topLeft := GameTab.Bounds.TopLeft;
+    topLeft.X += INV_OFF.X + ((i mod 2) * (INV_SIZ.X + INV_SPAC.X));
+    topLeft.Y += INV_OFF.Y + ((i div 2) * (INV_SIZ.Y + INV_SPAC.Y));
+    Self.Buttons[ERSToolLeprechaunInterface.INVENTORY][i].Bounds := [topLeft.X, topLeft.Y, topLeft.X + INV_SIZ.X, topLeft.Y + INV_SIZ.Y];
+  end;
+end;
+
+function TRSToolLeprechaun.InterfaceIsOpen(waitTime: Integer = 0): Boolean;
+begin
+  if waitTime = 0 then
+    Result := Self.Title.IsTitle(TRSToolLeprechaun.TITLE_TEXT)
+  else
+    Result := Self.Title.WaitTitle(TRSToolLeprechaun.TITLE_TEXT, 0.8, waitTime, -1);
+end;
+
+function TRSToolLeprechaun.OpenInterface(): Boolean; overload;
+begin
+  Result := Self.NPC.WalkSelect(['Exchange']) and Self.InterfaceIsOpen(1800);
+  //TODO bankpin
+end;
+
+function TRSToolLeprechaun.CloseInterface(): Boolean;
+begin
+  Result := Self.Title.Close;
+end;
+
+function TRSToolLeprechaun.Count(interfac: ERSToolLeprechaunInterface; tool: ERSToolLeprechaunItem): Integer;
+const
+  OCR_BOX: TBoxArray = [[4, 24, 60, 33], [2, 18, 50, 28]];
+var
+  b: TBox;
+  text: TStringArray;
+begin
+  if not Self.InterfaceIsOpen then Exit;
+
+  b := OCR_BOX[interfac].Offset(Self.Buttons[interfac, tool].Bounds.TopLeft);
+
+  text := OCR.Recognize(b, RSFonts.PLAIN_11, [$20DF20], 4).ExtractNumbers();
+  if text.Length > 0 then
+    Result := text[0].ExtractInteger(0);
+end;
+
+function TRSToolLeprechaun.Deposit(tool: ERSToolLeprechaunItem; amount: Integer): Boolean;
+var
+  count: Integer;
+  storeAmount: Integer;
+begin
+  if not Self.Count(ERSToolLeprechaunInterface.INVENTORY, tool) = 0 then
+    Exit;
+
+  Mouse.Move(Self.Buttons[ERSToolLeprechaunInterface.INVENTORY][tool].Bounds, True);
+  Sleep(50, 100);
+
+  if (tool = ERSToolLeprechaunItem.WATERING_CAN) or ((amount = -1) and MainScreen.IsUpText('Store-All')) then
+  begin
+    Mouse.Click(EMouseButton.LEFT);
+    Exit(True);
+  end;
+
+  if MainScreen.IsUpText('Store') then
+    storeAmount := MainScreen.UpText.Before('/').ExtractInteger();
+
+  if storeAmount = amount then
+  begin
+    Mouse.Click(EMouseButton.LEFT);
+    Result := True;
+  end else
+    case amount of
+      1, 5: Result := ChooseOption.Select(Format('Store-%d', [amount]));
+      -1:   Result := ChooseOption.Select('Store-All');
+      else  Result := ChooseOption.Select('Store-X') and Chat.AnswerQuery('Enter amount', IntToStr(amount));
+    end;
+end;
+
+function TRSToolLeprechaun.Withdraw(tool: ERSToolLeprechaunItem; amount: Integer): Boolean;
+var
+  count: Integer;
+  storeAmount: Integer;
+begin
+  if not Self.Count(ERSToolLeprechaunInterface.INVENTORY, tool) = 0 then
+    Exit;
+
+  Mouse.Move(Self.Buttons[ERSToolLeprechaunInterface.INVENTORY][tool].Bounds, True);
+  Sleep(50, 100);
+
+  if (tool = ERSToolLeprechaunItem.WATERING_CAN) or ((amount = -1) and MainScreen.IsUpText('Store-All')) then
+  begin
+    Mouse.Click(EMouseButton.LEFT);
+    Exit(True);
+  end;
+
+  if MainScreen.IsUpText('Remove') then
+    storeAmount := MainScreen.UpText.Before('/').ExtractInteger();
+
+  if storeAmount = amount then
+  begin
+    Mouse.Click(EMouseButton.LEFT);
+    Result := True;
+  end else
+    case amount of
+      1, 5: Result := ChooseOption.Select(Format('Remove-%d', [amount]));
+      -1:   Result := ChooseOption.Select('Remove-All');
+      else  Result := ChooseOption.Select('Remove-X') and Chat.AnswerQuery('Enter amount', IntToStr(amount));
+    end;
+end;
+
+function TRSToolLeprechaun.WithdrawNotes(tool: ERSToolLeprechaunItem): Boolean;
+begin
+  if not Self.Count(ERSToolLeprechaunInterface.INVENTORY, tool) = 0 then
+    Exit;
+
+  Mouse.Move(Self.Buttons[ERSToolLeprechaunInterface.INVENTORY][tool].Bounds, True);
+  Sleep(50, 100);
+  Result := ChooseOption.Select('Banknotes');
+end;
+
+function TRSToolLeprechaun.NoteItems(items: TRSItemArray): Boolean;
+var
+  playerPosition: TPoint;
+  closest: TPoint;
+  path: TPointArray;
+  leprechaun: T2DPointArray;
+  matches, tmpMatches: TRSItemFinderMatchArray;
+  match: TRSItemFinderMatch;
+  tmpItems: TRSItemArray;
+  mousePt: TPoint;
+  waitTime: Integer;
+begin
+  playerPosition := Map.Position();
+  closest := Map.Walker.GetClosestPointEx(playerPosition, Self.NPC.Coordinates, path);
+
+  if not Map.Walker.MakePointVisible(playerPosition, closest) then
+  begin
+    if path = [] then
+      path := Self.NPC.Walker^.WebGraph^.FindObjectPath(playerPosition, closest);
+
+    if path = [] then
+      raise GetDebugLn('TRSObject', 'Can''t path to object.');
+
+    if not Self.NPC.Walker^.WalkPath(path, 30) then
+      Exit;
+  end;
+
+  if not(Self.NPC.Find(leprechaun) or (Map.Position() = closest)) then
+    Exit;
+
+  if not (Inventory.Open() and ItemFinder.FindAll(items, Inventory.Slots.Boxes(), tmpMatches)) then
+    Exit;
+
+  for match in tmpMatches do
+    if not tmpItems.Contains(match.Item) then
+    begin
+      matches += match;
+      tmpItems += match.Item;
+    end;
+
+  Result := True;
+  for match in matches do
+  begin
+    if not Inventory.Select(match.Match.Index) then
+      Continue;
+
+    if Self.NPC.Find(leprechaun) then
+      mousePt := leprechaun[0].RandomMean
+    else if Map.Position() = closest then
+      mousePt := MainScreen.PlayerBox.RandomPointCenter
+    else
+      Exit(False);
+
+    Mouse.Move(mousePt);
+    sleep(75, 150);
+    if MainScreen.IsUpText(Format('Use %s -> Tool', [match.Item])) then
+    begin
+      Mouse.Click(EMouseButton.LEFT);
+      if not MainScreen.RedClicked() then
+      begin
+        Result := False;
+        Continue;
+      end;
+    end else if MainScreen.IsUpText('Walk here') or not ChooseOption.Select(Format('Use %s -> Tool', [match.Item])) then
+    begin
+      Result := False;
+      Continue;
+    end;
+
+    waitTime := (Max(Map.Walker.WebGraph^.PathBetween(Map.Position(), closest).Length, 3) + 1) * 600;
+    SleepUntil(Map.Position.InRange(closest, 6), Random(100, 800), waitTime);
+  end;
+end;
+
+function TRSToolLeprechaun.NoteItems(): Boolean; overload;
+begin
+  Result := Self.NoteItems(TRSToolLeprechaun.NOTABLE_ITEMS);
+end;
+
+begin
+  ToolLeprechaun.SetupInterface;
+end.
+
+
+
