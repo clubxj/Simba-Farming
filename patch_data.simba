@@ -2,11 +2,16 @@
 
 type
   TRSFarmPatchData = record
+    EmptyUptext: String;
     SoilColor: TColorTolerance;
     Coordinates: TBoxArray;
   end;
 
 const
+  HERB_EMPTY_UPTEXT = 'Inspect Herb patch';
+  ALLOTMENT_EMPTY_UPTEXT = 'Inspect Allotment';
+  FLOWER_EMPTY_UPTEXT = 'Inspect Flower';
+
   SOIL_COLOR_1: TColorTolerance = [$063A4B, 2.047, EColorSpace.HSL, [1.963, 0.275, 0.763]];
   SOIL_COLOR_2: TColorTolerance = [$335C64, 1.150, EColorSpace.HSL, [1.448, 1.301, 0.253]];
   SOIL_COLOR_3: TColorTolerance = [$41646C, 2.296, EColorSpace.HSL, [1.371, 1.158, 0.473]];
@@ -14,31 +19,31 @@ const
 
   FARM_PATCH_META_DATA: array of TRSFarmPatchData = [
     //WEISS_HERB
-    [SOIL_COLOR_1, [[7300, 34690, 7304, 34694]]],
+    [HERB_EMPTY_UPTEXT, SOIL_COLOR_1, [[7300, 34690, 7304, 34694]]],
     //STRONG_HOLD_HERB
-    [SOIL_COLOR_1, [[7212, 35650, 7216, 35654]]],
+    [HERB_EMPTY_UPTEXT, SOIL_COLOR_1, [[7212, 35650, 7216, 35654]]],
     //CATHERBY_HERB
-    [SOIL_COLOR_2, [[7156, 36574, 7160, 36578]]],
+    [HERB_EMPTY_UPTEXT, SOIL_COLOR_2, [[7156, 36574, 7160, 36578]]],
     //CATHERBY_FLOWER
-    [SOIL_COLOR_2, [[7144, 36574, 7148, 35678]]],
+    [FLOWER_EMPTY_UPTEXT, SOIL_COLOR_2, [[7144, 36574, 7148, 35678]]],
     //CATHERBY_ALLOT_N
-    [SOIL_COLOR_2, [[7124, 36558, 7128, 36566], [7132, 36558, 7160, 36562]]],
+    [ALLOTMENT_EMPTY_UPTEXT, SOIL_COLOR_2, [[7124, 36558, 7128, 36566], [7132, 36558, 7160, 36562]]],
     //CATHERBY_ALLOT_S
-    [SOIL_COLOR_2, [[7128, 36590, 7164, 36594], [7128, 36586, 7132, 36586]]],
+    [ALLOTMENT_EMPTY_UPTEXT, SOIL_COLOR_2, [[7128, 36590, 7164, 36594], [7128, 36586, 7132, 36586]]],
     //ARDOUGNE_HERB
-    [SOIL_COLOR_2, [[6584, 36930, 6588, 36934]]],
+    [HERB_EMPTY_UPTEXT, SOIL_COLOR_2, [[6584, 36930, 6588, 36934]]],
     //ARDOUGNE_FLOWER
-    [SOIL_COLOR_2, [[6584, 36930, 6588, 36034]]],
+    [FLOWER_EMPTY_UPTEXT, SOIL_COLOR_2, [[6584, 36930, 6588, 36034]]],
     //ARDOUGNE_ALLOT_N
-    [SOIL_COLOR_2, [[6568, 36916, 6604, 36918], [6568, 36922, 6572, 36922]]],
+    [ALLOTMENT_EMPTY_UPTEXT, SOIL_COLOR_2, [[6568, 36916, 6604, 36918], [6568, 36922, 6572, 36922]]],
     //ARDOUGNE_ALLOT_S
-    [SOIL_COLOR_2, [[6568, 36946, 6604, 36950], [6568, 36942, 6572, 36942]]],
+    [ALLOTMENT_EMPTY_UPTEXT, SOIL_COLOR_2, [[6568, 36946, 6604, 36950], [6568, 36942, 6572, 36942]]],
     //HOSIDIOUS_HERB
-    [SOIL_COLOR_3, [[6584, 36930, 6588, 36934]]],
+    [HERB_EMPTY_UPTEXT, SOIL_COLOR_3, [[6584, 36930, 6588, 36934]]],
     //HOSIDIOUS_FLOWER
-    [SOIL_COLOR_3, [[6584, 36930, 6588, 36034]]],
+    [FLOWER_EMPTY_UPTEXT, SOIL_COLOR_3, [[6584, 36930, 6588, 36034]]],
     //HOSIDIOUS_ALLOT_N
-    [SOIL_COLOR_3, [[2836, 36194, 2860, 36198], [2856, 36202, 2860, 36214]]]
+    [ALLOTMENT_EMPTY_UPTEXT, SOIL_COLOR_3, [[2836, 36194, 2860, 36198], [2856, 36202, 2860, 36214]]]
     //HOSIDIOUS_ALLOT_S
   ];
 
@@ -48,6 +53,14 @@ begin
     raise 'Patch not yet supported';
 
   Result := FARM_PATCH_META_DATA[descriptor];
+end;
+
+function TRSFarmPatchData.GetEmptyUptext(descriptor: ERSFarmPatchDescriptor): String; static;
+begin
+  if Ord(descriptor) > High(FARM_PATCH_META_DATA) then
+    raise 'Patch not yet supported';
+
+  Result := FARM_PATCH_META_DATA[descriptor].EmptyUptext;
 end;
 
 function TRSFarmPatchData.GetSoilColor(descriptor: ERSFarmPatchDescriptor): TColorTolerance; static;

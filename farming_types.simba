@@ -43,8 +43,13 @@ type
     FERTILE_SOIL
   );
 
+function ERSFarmPatchDescriptor.ToString(): String;
+begin
+  Result := ToStr(Self).After('ERSFarmPatchDescriptor.');
+end;
+
 function ERSCompost.ToString(): String;
 begin
-  Result := ToStr(Self).ToLower.Capitalize.Replace('_', ' ');
+  Result := ToStr(Self).After('ERSCompost').ToLower().Capitalize().Replace('_', ' ');
 end;
 

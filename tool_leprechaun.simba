@@ -1,9 +1,11 @@
+{$DEFINE WL_TOOL_LEPRECHAUN_INCLUDED}
+
 {$INCLUDE_ONCE WaspLib/osrs.simba}
 {$INCLUDE_ONCE utils.simba}
 
 type
   ERSToolLeprechaunItem = enum(
-    FARMING_RAKE,
+    RAKE,
     SEED_DIBBER,
     SPADE,
     SECATEURS,
@@ -17,13 +19,10 @@ type
     ULTRACOMPOST
   );
 
-  ERSToolLeprechaunInterface = enum(
-    STORAGE,
-    INVENTORY
-  );
+  ERSToolLeprechaunInterface = enum( STORAGE, INVENTORY );
 
   TRSToolLeprechaun = record
-    NPC: TRSObject;
+    Leprechauns: TRSObjectArray;
     Bounds: TBox;
     Title: TRSInterfaceTitle;
     Buttons: array[ERSToolLeprechaunInterface] of array[ERSToolLeprechaunItem] of TRSButton;
@@ -52,19 +51,19 @@ type
       'Giant seaweed'
     ];
 
-
   end;
 
 var
   ToolLeprechaun: TRSToolLeprechaun;
 
-procedure TRSToolLeprechaun.SetupInterface();
+procedure TRSToolLeprechaun.Setup();
 const
   STO_SIZ: TPoint = [106, 58]; STO_SPAC: TPoint = [10, 7]; STO_OFF: TPoint = [19, 45];
   INV_SIZ: TPoint = [ 92, 42]; INV_SPAC: TPoint = [ 3, 1]; INV_OFF: TPoint = [-2,  2];
 var
   i: Integer;
   topLeft: TPoint;
+  lep: TRSObject;
 begin
   Self.Bounds := MSInterface.CreateBounds([0, 0, -1, 0], 492, 298);
   Self.Title.Setup(Self.Bounds);
@@ -84,6 +83,26 @@ begin
     topLeft.Y += INV_OFF.Y + ((i div 2) * (INV_SIZ.Y + INV_SPAC.Y));
     Self.Buttons[ERSToolLeprechaunInterface.INVENTORY][i].Bounds := [topLeft.X, topLeft.Y, topLeft.X + INV_SIZ.X, topLeft.Y + INV_SIZ.Y];
   end;
+
+  lep.Walker := @Map.Walker;
+  lep.Finder.Colors := [[$3A794A, 2.110, EColorSpace.HSL, [2.121, 0.413, 0.467]]];
+  lep.Setup([1,1,4], [
+    [  840, 35384], [  848, 35500], [  912, 35404], [  952, 35504], [ 2688, 36252],
+    [ 2868, 36220], [ 3128, 36208], [ 5288, 37772], [ 5844, 37716], [ 5660, 36772],
+    [ 5816, 36652], [ 6196, 37996], [ 6380, 37544], [ 6588, 36956], [ 6556, 36344],
+    [ 7092, 38012], [ 6996, 37584], [ 7152, 37100], [ 7164, 36560], [ 7356, 36700],
+    [ 7660, 37552], [ 7668, 36700], [ 8160, 37408], [ 8116, 37208], [ 7936, 36948],
+    [ 8252, 37020], [ 8688, 37516], [ 8632, 37012], [ 8792, 37164], [ 8832, 36608],
+    [ 9180, 37612], [ 9720, 36556], [10288, 36332], [11072, 39068], [ 6288, 34988],
+    [10752, 35072], [ 9084, 26008], [ 7208, 35688]
+  ]);
+
+  Self.Leprechauns += lep;
+end;
+
+function TRSToolLeprechaun.NPC(playerPosition: TPoint = []): TRSNPC;
+begin
+  Result.Setup(NPCsJSON.get('Tool leprechaun'));
 end;
 
 function TRSToolLeprechaun.InterfaceIsOpen(waitTime: Integer = 0): Boolean;
@@ -96,7 +115,7 @@ end;
 
 function TRSToolLeprechaun.OpenInterface(): Boolean; overload;
 begin
-  Result := Self.NPC.WalkSelect(['Exchange']) and Self.InterfaceIsOpen(1800);
+  Result := Self.NPC().WalkSelect(['Exchange']) and Self.InterfaceIsOpen(1800);
   //TODO bankpin
 end;
 
@@ -208,21 +227,21 @@ var
   waitTime: Integer;
 begin
   playerPosition := Map.Position();
-  closest := Map.Walker.GetClosestPointEx(playerPosition, Self.NPC.Coordinates, path);
+  closest := Map.Walker.GetClosestPointEx(playerPosition, Self.NPC(playerPosition).Coordinates, path);
 
   if not Map.Walker.MakePointVisible(playerPosition, closest) then
   begin
     if path = [] then
-      path := Self.NPC.Walker^.WebGraph^.FindObjectPath(playerPosition, closest);
+      path := Self.NPC(playerPosition).Walker^.WebGraph^.FindObjectPath(playerPosition, closest);
 
     if path = [] then
       raise GetDebugLn('TRSObject', 'Can''t path to object.');
 
-    if not Self.NPC.Walker^.WalkPath(path, 30) then
+    if not Self.NPC(playerPosition).Walker^.WalkPath(path, 30) then
       Exit;
   end;
 
-  if not(Self.NPC.Find(leprechaun) or (Map.Position() = closest)) then
+  if not(Self.NPC(playerPosition).Find(leprechaun) or (Map.Position() = closest)) then
     Exit;
 
   if not (Inventory.Open() and ItemFinder.FindAll(items, Inventory.Slots.Boxes(), tmpMatches)) then
@@ -241,7 +260,7 @@ begin
     if not Inventory.Select(match.Match.Index) then
       Continue;
 
-    if Self.NPC.Find(leprechaun) then
+    if Self.NPC(playerPosition).Find(leprechaun) then
       mousePt := leprechaun[0].RandomMean
     else if Map.Position() = closest then
       mousePt := MainScreen.PlayerBox.RandomPointCenter
@@ -275,8 +294,9 @@ begin
 end;
 
 begin
-  ToolLeprechaun.SetupInterface;
+  Map.Setup([ERSChunk.CATHERBY, ERSChunk.ARDOUGNE, ERSChunk.AL_KHARID]);
+  NPCsJSON.Load([Map.Region]);
+  writeln NPCsJSON.Get('Tool leprechaun').AsString;
+ // writeln ToolLeprechaun.NPC().Coordinates;
 end.
-
-
 

@@ -1,3 +1,5 @@
+{$INCLUDE_ONCE WaspLib/osrs.simba}
+
 function ClusteredClickPattern(allSlots: TBoxArray; targetSlots: TIntegerArray): TIntegerArray;
 const
   MIN_CLUSTER_SIZE = 2; MAX_CLUSTER_SIZE = 4; FIRST_CLICK_VARIATION_CHANCE = 10;
@@ -149,12 +151,16 @@ begin
         end;
       end;
 
-    if results = [] then Exit;
 
     matches += results;
     results := [];
   end;
 
-  Result := True;
+  Result := matches.Length > 0;
+end;
+
+function TRSMagic.SpellBookSwap(spellBook: ERSSpellBook): Boolean;
+begin
+
 end;
 

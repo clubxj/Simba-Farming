@@ -109,6 +109,7 @@ end;
 procedure TRSFarmingTravelHelper._LoadMap(mapArea: TBox);
 begin
   Map.AddEx([RSTranslator.Global2Chunk(mapArea.Expand(80))], [0]);
+  TRSMapChunk
 end;
 
 function TRSFarmingTravelHelper._ConfirmTravel(mapArea: TBox): Boolean;
@@ -214,11 +215,13 @@ end;
 
 function TRSFarmingTravelHelper._POHPortal(): Boolean;
 begin
+Result := False;
  raise 'POH teleports are not yet implemented';
 end;
 
 function TRSFarmingTravelHelper._POHNexus(): Boolean;
 begin
+Result := False;
   raise 'POH nexus is not yet implemented';
 end;
 

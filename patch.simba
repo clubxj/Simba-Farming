@@ -1,3 +1,12 @@
+{.$DEFINE WL_DISABLE_FAKE_INPUT}
+
+procedure TTarget.MouseMove(Dest: TPoint); override;
+begin
+  if dest = [0,0] then
+    raise'Moving mouse to 0,0';
+  inherited;
+end;
+
 {$INCLUDE_ONCE WaspLib/osrs.simba}
 
 {$INCLUDE_ONCE farming_types.simba}
@@ -47,6 +56,7 @@ type
     Harvested: Boolean;
     Planted: Boolean;
     Composted: Boolean;
+
     ResurrectCropFailed: Boolean;
 
     SeedSlot: Integer;
@@ -54,6 +64,7 @@ type
   end;
 
   TRSFarmPatchFindResults = record
+    Coordinates: TPoint;
     SearchBox: TBox;
     ClickBox: TBox;
     PatchQuad: TQuad;
@@ -61,7 +72,7 @@ type
 
 procedure TRSFarmPatch.DebugLn(text: String);
 begin
-  WriteLn(Format('%s:[TRSFarmPatch:%s]: %s', [GetTimeStamp(), ToString(Self.Descriptor), text]));
+  WriteLn(Format('%s:[TRSFarmPatch:%s]: %s', [GetTimeStamp(), Self.Descriptor.ToString(), text]));
 end;
 
 procedure TRSFarmPatch.DebugLn(text: String; args: TVariantArray); overload;
@@ -84,6 +95,20 @@ begin
   Self.CompostSlot := -1;
 end;
 
+procedure ShowOnTarget(findResults: TRSFarmPatchFindResults); overload;
+var
+  img: TImage;
+begin
+  img := Target.GetImage();
+  img.DrawColor := $ff;
+  img.DrawBox(findResults.ClickBox);
+  img.DrawColor := $ff00;
+  img.DrawBox(findResults.SearchBox);
+  img.DrawColor := $ff0000;
+  img.DrawQuad(findResults.PatchQuad);
+  img.Show();
+end;
+
 function TRSFarmPatch.Find(): TRSFarmPatchFindResults;
 var
   playerPosition, coordinate: TPoint;
@@ -92,7 +117,6 @@ var
   offset, direction, i, xd, yd, boxMod: Integer;
   tpa, allCoordinates, coordinates: TPointArray;
   tiles : TQuadArray;
-  img: TImage;
   searchBox: TBox;
 begin
   playerPosition := Map.Position;
@@ -126,7 +150,7 @@ begin
     Exit;
 
   for coordinate in coordinates do
-    tiles += Map.Walker.GetQuadMS(playerPosition, coordinate, Map.HeightDifference(playerPosition, coordinate), [0,0,0], compassAngle);
+    tiles += Map.Walker.GetQuadMS(playerPosition, coordinate, compassAngle);
 
   boxMod := MainScreen.NormalizeDistance(15);
   searchBox := Box(tiles.Means.Mean, boxMod, boxMod);
@@ -134,6 +158,7 @@ begin
   if not Target.HasColor(TRSFarmPatchData.GetSoilColor(Self.Descriptor), 5, searchBox) then
     Exit;
 
+  Result.Coordinates := coordinates.NearestPoint(playerPosition);
   Result.SearchBox := searchBox;
   with tiles[0].NearestEdge(Result.SearchBox.Center) do
   begin
@@ -146,18 +171,13 @@ begin
     Result.ClickBox.Y2 := Y;
   end;
   Result.ClickBox := Result.ClickBox.Normalize.Expand(1);
-  //TODO set patch quad
+  Result.PatchQuad := T2DPointArray([tiles[0].Corners,
+                                   tiles[1].Corners,
+                                   tiles[2].Corners,
+                                   tiles[3].Corners]).Merge().MinAreaRect();
 
   //DEBUG
-  img := Target.GetImage();
-  tpa := tiles[0].Corners;
-  tpa += tiles[1].Corners;
-  tpa += tiles[2].Corners;
-  tpa += tiles[3].Corners;
-  img.DrawQuad(tpa.MinAreaRect);
-  img.DrawBox(Result.SearchBox);
-  img.DrawBox(Result.ClickBox);
-  img.Show;
+  ShowOnTarget(Result);
 end;
 
 function TRSFarmPatch.WalkFind(attempts: Integer = 2): TRSFarmPatchFindResults;
@@ -195,30 +215,51 @@ begin
   end;
 end;
 
-function TRSFarmPatch.WalkHover(uptext: TStringArray = []; attempts: Integer = 2): Boolean;
-begin
-
-end;
-
 function TRSFarmPatch.Interact(options: TStringArray = []; attempts: Integer = 2): Boolean;
 var
-  findResult: TRSFarmPatchFindResults;
   attempt: Integer;
+  playerPosition: TPoint;
+  findResults: TRSFarmPatchFindResults;
+  upText: String;
+  timer: TCountDown;
+  shouldClick: Boolean;
+  option: String;
 begin
-  findResult := Self.Find();
-  if findResult = [] then
+  findResults := Self.Find();
+  if findResults = [] then
     Exit;
 
-  for attempt := 1 to attempts do
+  Mouse.Move(findresults.ClickBox);
+  shouldClick := options.Length = 0;
+  timer.Start(250);
+  Sleep(50, 150);
+  while (not shouldClick) and (timer.Remaining > 0) do
   begin
-    Mouse.Move(findResult.ClickBox, True);
-    if (options.Length = 0) or MainScreen.IsUpText(options) then
-    begin
-      Mouse.Click(EMouseButton.LEFT);
-      Exit(MainScreen.RedClicked);
-    end else if ChooseOption.Select(options) then
-      Exit(True);
+    upText := MainScreen.UpText;
+    for option in options do
+      if uptext.CopyRange(1, options.Length).Similarity(option) >= 0.85 then
+      begin
+        shouldClick := True;
+        Break;
+      end;
+    Sleep(1);
   end;
+
+  if shouldClick then
+  begin
+    Mouse.Click(EMouseButton.LEFT);
+    Result := MainScreen.RedClicked();
+    Self.DebugLn('Interacting success=%s; options = %s; uptext=%s', [ToString(Result), ToString(options), MainScreen.UpText]);
+  end else if not MainScreen.IsUpText('Walk here') then
+  begin
+    Result := ChooseOption.Select(options);
+    Self.DebugLn('Interacting success=%s; options = %s', [ToString(Result), ToString(options)]);
+  end;
+end;
+
+function TRSFarmPatch.WalkInteract(options: TStringArray = []; attempts: Integer = 2): Boolean;
+begin
+  Result := (Self.WalkFind(attempts) <> []) and Self.Interact(options, attempts);
 end;
 
 function TRSFarmPatch.IsEmpty(): Boolean;
@@ -232,38 +273,30 @@ begin
   Result := Target.HasColor(TRSFarmPatchData.GetSoilColor(Self.Descriptor), Round(findResults.SearchBox.Area * 0.98), findResults.SearchBox);
 end;
 
-function TRSFarmPatch.WalkInteract(options: TStringArray = []; attempts: Integer = 2): Boolean;
+function TRSFarmPatch.Inspect(): ERSFarmPatchState;
 var
-  attempt: Integer;
-  playerPosition: TPoint;
-  findResults: TRSFarmPatchFindResults;
+  messageLine: Integer;
+  message: String;
 begin
-  findResults := Self.Find();
-
-  if findResults = [] then
-    for attempt := 1 to attempts do
-    begin
-      playerPosition := Map.Position;
-      Map.Walker.WebWalkEx(playerPosition, TRSFarmPatchData.GetCoordinates(Self.Descriptor).SortFrom(playerPosition)[0]);
-      //TODO walkevent
-      findResults := Self.Find();
-      if findResults <> [] then Break;
-    end;
-
-  if findResults = [] then
+  if not Self.Interact(['Inspect']) then
     Exit;
 
-  Mouse.Move(findresults.ClickBox);
-  Sleep(150);
-  Self.DebugLn('Interacting. uptext=%s', [MainScreen.UpText]);
-  if (options.Length = 0) or SleepUntil(MainScreen.IsUpText(options), 5, 150) then
-  begin
-    Mouse.Click(EMouseButton.LEFT);
-    Result := MainScreen.RedClicked();
-  end else if not MainScreen.IsUpText('Walk here') then
-    Result := ChooseOption.Select(options);
+  SleepUntil(Target.GetPixelDifference(100, Chat.Bounds).Length >= 50, 0, 6000);
 
-  Self.DebugLn('Interaction success=%s; options=%s', [ToString(Result), ToString(options)]);
+  for messageLine := chat.MessageLines.High downto chat.MessageLines.High - 2 do
+    message += Chat.GetMessage(messageLine).ToLower;
+
+  Self.Composted := message.Contains('soil has been');
+
+  writeln message;
+  if message.Contains('is empty') then
+    Exit(ERSFarmPatchState.EMPTY);
+  if message.Contains('growing in it') then
+    Exit(ERSFarmPatchState.GROWING);
+  if message.Contains('dead') then
+    Exit(ERSFarmPatchState.DEAD);
+  if message.Contains('diseas') then
+    Exit(ERSFarmPatchState.DISEASED);
 end;
 
 function TRSFarmPatch.GetState(): ERSFarmPatchState;
@@ -273,8 +306,6 @@ const
 var
   findResults: TRSFarmPatchFindResults;
   text: String;
-  messageLine: Integer;
-  message: String;
 
   function UpText(strings: TStringArray): Boolean;
   var s: String;
@@ -292,9 +323,6 @@ begin
   if Self.Planted or Self.Composted then
     Exit(ERSFarmPatchState.GROWING);
 
-  if Target.HasColor(TRSFarmPatchData.GetSoilColor(Self.Descriptor), Round(findResults.SearchBox.Area * 0.98), findResults.SearchBox) then
-    Exit(ERsFarmPatchState.EMPTY);
-
   if not Self.Hover then
     Exit;
 
@@ -302,6 +330,8 @@ begin
   text := MainScreen.UpText;
   Self.DebugLn('Looking for patch state; hovering patch. uptext=%s', [text]);
 
+  if UpText([TRSFarmPatchData.GetEmptyUptext(Self.Descriptor)]) then
+    Exit(ERSFarmPatchState.EMPTY);
   if UpText(['Pick', 'Harvest']) then
     Exit(ERSFarmPatchState.GROWN_HARVEST_READY);
   if UpText(['Check-health']) then
@@ -311,23 +341,12 @@ begin
   if UpText(['Cure']) then
     Exit(ERSFarmPatchState.DISEASED);
 
-  if not UpText(['Inspect']) and Self.Interact(['Inspect']) then
-    Exit;
-
-  for messageLine := chat.MessageLines.High downto chat.MessageLines.High - 2 do
-    message += Chat.GetMessage(messageLine).ToLower;
-
-  if message.Contains('is empty') then
-    Exit(ERSFarmPatchState.EMPTY);
-  if message.ContainsAny(['has been', 'growing in it']) then
-    Exit(ERSFarmPatchState.GROWING);
-  if message.Contains('dead') then
-    Exit(ERSFarmPatchState.DEAD);
-  if message.Contains('diseas') then
-    Exit(ERSFarmPatchState.DISEASED);
+  Result := Self.Inspect();
 end;
 
 function TRSFarmPatch.GetAction(state: ERSFarmPatchState): ERSFarmPatchAction;
+var
+  selected: Integer;
 begin
   if Magic.IsOpen then
   begin
@@ -349,10 +368,11 @@ begin
   begin
     if Inventory.IsFull then
       Exit(ERSFarmPatchAction.NOTE_ITEMS);
-    case Inventory.GetSelected of
-      Self.CompostSlot: Exit(ERSFarmPatchAction.COMPOST);
-      Self.SeedSlot   : Exit(ERSFarmPatchAction.PLANT);
-    end;
+    if (selected := Inventory.GetSelected()) >= 0 then
+      case Inventory.GetSelected of
+        Self.CompostSlot: Exit(ERSFarmPatchAction.COMPOST);
+        Self.SeedSlot   : Exit(ERSFarmPatchAction.PLANT);
+      end;
   end;
 
   case state of
@@ -375,21 +395,13 @@ begin
       Exit(ERSFarmPatchAction.CURE_PLANT_POTION);
 
   if (state = ERSFarmPatchState.GROWING) and (not Self.Composted) then
-  begin
-    if Self.CompostMethod = ERSCompost.FERTILE_SOIL then
-      Exit(ERSFarmPatchAction.CAST_FERTILE_SOIL);
-    if Self.CompostMethod <> ERSCompost.NONE then
-      if Self.HasCompost then
-        Exit(ERSFarmPatchAction.COMPOST)
-      else
-        Exit(ERSFarmPatchAction.WITHDRAW_COMPOST);
-  end;
-end;
+    case Self.CompostMethod of
+      ERSCompost.FERTILE_SOIL:        Exit(ERSFarmPatchAction.CAST_FERTILE_SOIL);
+      ERSCompost.NONE:                Exit(ERSFarmPatchAction.NO_ACTION);
+      else if Self.HasCompost() then  Exit(ERSFarmPatchAction.COMPOST)
+      else                            Exit(ERSFarmPatchAction.WITHDRAW_COMPOST);
+    end;
 
-function TRSFarmPatch.Inspect(): Boolean; //TODO??
-begin
-  if not Self.WalkInteract(['Inspect']) then
-    Exit;
 end;
 
 function TRSFarmPatch.CheckHealth(): Boolean;
@@ -400,26 +412,52 @@ end;
 function TRSFarmPatch.Harvest(): Boolean;
 var
   inactivity: TCountDown;
+  xp: TRSXPBar;
+  position: record last, current: TPoint; end;
 begin
+  //setup xp tracker
+  xp := XPBar;
+  xp.EarnedXP();
+
   if not Self.WalkInteract(['Pick', 'Harvest']) then
     Exit;
 
-  //TODO wait until movement stops?
+  //setup inactivity
+  inactivity.Start(2400); //calc distance or something
+  position.last := Map.Position();
 
-  inactivity.Start(2400);
+  //monitor xp gain and inventory while harvesting.
   repeat
-    if Self.IsEmpty                             then Exit(Self.Harvested := True);
-    if Inventory.IsFull                         then Exit(True);
-    if XPBar.EarnedXP                           then inactivity.Restart;
+    position.current := Map.Position();
+    if position.current <> position.last then
+      inactivity.Restart();
+    position.last := position.current;
 
-    //TODO do some antiban stuff??
+    if xp.EarnedXP() then
+    begin
+      inactivity.Restart();
+      Result := True;
+    end;
+
+    if Inventory.IsOpen() and Inventory.IsFull() then
+      Break;
+
+    //TODO preselect seeds or compost!
+    //TODO move mouse!
   until inactivity.IsFinished;
+
+  if inactivity.IsFinished then
+    Self.DebugLn('Done harvesting due to inactivity.');
+
+  Inventory.Open();
 end;
 
 function TRSFarmPatch.Plant(): Boolean;
 var
   selected: Integer;
   inactivity: TCountDown;
+  xp: TRSXPBar;
+  position: record last, current: TPoint; end;
 begin
   if Self.WalkFind = [] then
     Exit;
@@ -430,8 +468,9 @@ begin
     Exit;
   end;
 
+  //Check if an item is already, selected, and if it's our seed done as a preselect
+  //Select the correct item
   selected := Inventory.GetSelected;
-  writeln selected;
   if selected >= 0 then
   begin
     if selected <> Self.SeedSlot then
@@ -446,6 +485,7 @@ begin
     Inventory.Select(Self.Seed, True);
   end;
 
+  //Check if an item is currently selected and assume it's correct after the last patch of code
   if Inventory.GetSelected < 0 then
   begin
     Self.DebugLn('Failed to selected the correct seed for planting');
@@ -453,22 +493,45 @@ begin
   end else
     Self.DebugLn('Successfuly selected the correct seed to plant');
 
-  //clear previous earned xp.
-  XPBar.EarnedXP;
+  //setup xp tracker
+  xp := XPBar;
+  xp.EarnedXP();
 
+  //click on the patch
+  //TODO, some uptext here??
   if not Self.Interact() then
     Exit;
 
   //Clear cached seed slot from preselect
   Self.SeedSlot := -1;
 
-
+  //setup inactivity
   inactivity.Start(2400); //calc distance or something
-  repeat
-    if not Self.IsEmpty then Exit(Self.Planted := True);
-    if XPBar.EarnedXP then Exit(Self.Planted := True);
+  position.last := Map.Position();
 
-    //TODO do some antiban stuff??
+  //wait until xp is received to confirm planting.
+  repeat
+    position.current := Map.Position();
+    if position.current <> position.last then
+      inactivity.Restart();
+    position.last := position.current;
+
+    if xp.EarnedXP() then
+    begin
+      //TODO debugln!
+      Self.Planted := True;
+      Exit(True);
+    end;
+
+    if Chat.HasContinue() then
+    begin
+      //TODO debugln!
+      Self.Planted := True;
+      Exit(True);
+    end;
+
+    //TODO preselect compost
+    //TODO move mouse!
   until inactivity.IsFinished;
 end;
 
@@ -476,7 +539,7 @@ function TRSFarmPatch.FertileSoil(): Boolean;
 var
   inactivity: TCountDown;
 begin
-  if not (Self.WalkFind and Magic.CastSpell(ERSSpell.FERTILE_SOIL)) then
+  if not ((Self.WalkFind <> []) and Magic.CastSpell(ERSSpell.FERTILE_SOIL)) then
     Exit;
 
   XPBar.EarnedXP;
@@ -497,9 +560,9 @@ var
   inactivity: TCountDown;
 begin
   if Self.CompostMethod = ERSCompost.FERTILE_SOIL then
-    Exit(Self.FertileSoil);
+    Exit(Self.FertileSoil());
 
-  if not Self.WalkFind then
+  if Self.WalkFind() = [] then
     Exit;
 
   selected := Inventory.GetSelected;
@@ -534,7 +597,7 @@ end;
 
 function TRSFarmPatch.Resurrect(): Boolean;
 var
-  patchResults: TRSPatchFindResults;
+  patchResults: TRSFarmPatchFindResults;
   spellbookSwap: Boolean;
 begin
   if spellbookSwap := (Magic.GetSpellBook() = ERSSpellBook.LUNAR) and not Magic.SpellBookSwap(ERSSpellBook.ARCEUUS) then
@@ -556,16 +619,18 @@ begin
     //if earned xp then complete, maybe check if composted??
 
   end;
-  Inventory.Slots
+
 end;
 
 function TRSFarmPatch.CleanHerbs(): Boolean;
-const GRIMY_HERBS = TRSToolLeprechaun.NOTABLE_ITEMS[TRSToolLeprechaun.GRIMY_HERBS_START..TRSToolLeprechaun.GRIMY_HERBS_END];
+const
+  GRIMY_HERBS: TRSItemArray = [];
+   //TRSToolLeprechaun.NOTABLE_ITEMS[TRSToolLeprechaun.GRIMY_HERBS_START..TRSToolLeprechaun.GRIMY_HERBS_END];
 var
   slot: Integer;
   slots: TIntegerArray;
 begin
-  if not Inventory.Items.Find(GRIMY_HERBS, slots) then
+  if not Inventory.Items.FindAll(GRIMY_HERBS, slots) then
     Exit;
 
   for slot in ClusteredClickPattern(Inventory.Slots.Boxes(), slots) do
@@ -614,31 +679,43 @@ begin
     Exit;
   end;
 
-  xp.Setup;
+  xp := XPBar;
+  xp.EarnedXP();
+
   inactivity.Start(2 * ONE_MINUTE);
   repeat
-    state := Self.GetState;
+    state := Self.GetState();
     Self.DebugLn('Current patch state: %s', [ToString(state)]);
-    //if Self.Completed then
-    //  Exit(True);
 
-    if xp.EarnedXP() then inactivity.Restart();
+    if xp.EarnedXP() then
+      inactivity.Restart();
 
     action := Self.GetAction(state);
-    Self.DebugLn('Chosen action: %s. Handling now.', [ToString(action)]);
+    Self.DebugLn('Chosen action: %s.', [ToString(action)]);
+    if action = ERSFarmPatchAction.NO_ACTION then
+    begin
+      //TODO DEBUGLN
+      Exit;
+    end;
+
     Self.HandleAction(action);
   until inactivity.IsFinished;
 end;
 
 var
   patch: TRSFarmPatch;
-  img: TImage;
 begin
   FarmingTravel.Init;
   FarmingTravel.Helper._LoadMap(TRSFarmingTravelHelper.HOSIDIOUS_MAP);
+  ToolLeprechaun.Setup();
+  XPBar.SetupInterface;
+  XPBar.Setup;
   patch.Descriptor := ERSFarmPatchDescriptor.HOSIDIOUS_ALLOT_N;
   patch.TravelMethod := ERSFarmingTravel.XERIC_TALISMAN_GLADE;
   patch.Seed := 'Watermelon seed';
+  showontarget(XPBar.Bounds);
+  xpbar.Read;
   //patch.WalkInteract(['Harvest']);
   patch.run;
+
 end.
