@@ -95,7 +95,7 @@ begin
   Self.CompostSlot := -1;
 end;
 
-procedure ShowOnTarget(findResults: TRSFarmPatchFindResults); overload;
+procedure TRSFarmPatchFindResults.ShowOnMainScreen();
 var
   img: TImage;
 begin
@@ -177,7 +177,7 @@ begin
                                    tiles[3].Corners]).Merge().MinAreaRect();
 
   //DEBUG
-  ShowOnTarget(Result);
+  Result.ShowOnMainScreen();
 end;
 
 function TRSFarmPatch.WalkFind(attempts: Integer = 2): TRSFarmPatchFindResults;
@@ -185,15 +185,18 @@ var
   attempt: Integer;
   playerPosition: TPoint;
 begin
-  Result := Self.Find;
+  Result := Self.Find();
   if Result <> [] then Exit;
 
   for attempt := 1 to attempts do
   begin
-    playerPosition := Map.Position;
-    Map.Walker.WebWalkEx(playerPosition, TRSFarmPatchData.GetCoordinates(Self.Descriptor).SortFrom(playerPosition)[0]);
+    playerPosition := Map.Position();
+    Map.Walker.WebWalkEx(
+      playerPosition,
+      TRSFarmPatchData.GetCoordinates(Self.Descriptor).SortFrom(playerPosition)[0]
+    );
     //TODO walkevent
-    Result := Self.Find;
+    Result := Self.Find();
     if Result <> [] then Exit;
   end;
 end;
@@ -270,7 +273,11 @@ begin
   if findResults = [] then
     Exit;
 
-  Result := Target.HasColor(TRSFarmPatchData.GetSoilColor(Self.Descriptor), Round(findResults.SearchBox.Area * 0.98), findResults.SearchBox);
+  Result := Target.HasColor(
+    TRSFarmPatchData.GetSoilColor(Self.Descriptor),
+    Round(findResults.SearchBox.Area * 0.98),
+    findResults.SearchBox
+  );
 end;
 
 function TRSFarmPatch.Inspect(): ERSFarmPatchState;
@@ -316,7 +323,7 @@ var
   end;
 
 begin
-  findResults := Self.WalkFind;
+  findResults := Self.WalkFind();
   if findResults = [] then
     Exit;
 
@@ -348,7 +355,7 @@ function TRSFarmPatch.GetAction(state: ERSFarmPatchState): ERSFarmPatchAction;
 var
   selected: Integer;
 begin
-  if Magic.IsOpen then
+  if Magic.IsOpen() then
   begin
     if Magic.ContainsSelected(False) then
     begin
@@ -717,5 +724,5 @@ begin
   xpbar.Read;
   //patch.WalkInteract(['Harvest']);
   patch.run;
-
+    transporter.
 end.
