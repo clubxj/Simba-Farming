@@ -1,4 +1,5 @@
 {$INCLUDE_ONCE WaspLib/osrs.simba}
+{$INCLUDE_ONCE chunks.simba}
 
 type
   ERSFarmTravelType = enum(
@@ -15,16 +16,7 @@ type
   // Loaded for future GUI validation — travel runtime does not check them.
   TRSFarmTravelReqs = array of TStringArray;
 
-  // Place = farm chunk area. map → Map.AddEx; local → skip-tele when already here.
-  // Transport only gets you into local / onto a landing; WalkFind + walker handle the rest.
-  TRSFarmTravelPlace = record
-    Id: String;
-    MapArea: TBox;
-    LocalArea: TBox;
-    MethodIds: TStringArray;
-  end;
-
-  // Teleport landing jitter: center + radius (world coords).
+  // Teleport landing jitter: center + radius (world/global coords).
   TRSFarmTravelLanding = record
     X: Integer;
     Y: Integer;
@@ -34,7 +26,7 @@ type
   TRSFarmTravelMethod = record
     Id: String;
     TravelType: ERSFarmTravelType;
-    PlaceId: String;
+    ChunkId: String;
     Landing: TRSFarmTravelLanding;
     Item: TRSItem;
     Option: String;
@@ -42,18 +34,10 @@ type
     Reqs: TRSFarmTravelReqs;
   end;
 
-  // Patch → place for future GUI config. Farm run picks the method; Travel only takes a method id.
-  TRSFarmTravelPatch = record
-    PatchId: String;
-    PlaceId: String;
-  end;
-
   TRSFarmingTravel = record
     Loaded: Boolean;
     DataPath: String;
-    Places: array of TRSFarmTravelPlace;
     Methods: array of TRSFarmTravelMethod;
-    Patches: array of TRSFarmTravelPatch;
   end;
 
 var FarmingTravel: TRSFarmingTravel;
@@ -71,19 +55,6 @@ begin
   else
     raise Format('Unknown travel type "%s"', [value]);
   end;
-end;
-
-function TRSFarmingTravel.BoxFromJSON(item: TJSONItem): TBox; static;
-begin
-  if (item.Typ <> EJSONType.ARR) or (item.Count <> 4) then
-    raise 'Expected map/local box [x1, y1, x2, y2]';
-
-  Result := [
-    item.Item[0].AsInt,
-    item.Item[1].AsInt,
-    item.Item[2].AsInt,
-    item.Item[3].AsInt
-  ];
 end;
 
 function TRSFarmingTravel.LandingFromJSON(item: TJSONItem): TRSFarmTravelLanding; static;
@@ -161,15 +132,6 @@ begin
   raise 'travel.json not found. Pass an absolute path to FarmingTravel.Init()';
 end;
 
-function TRSFarmingTravel.HasPlace(placeId: String): Boolean;
-var
-  place: TRSFarmTravelPlace;
-begin
-  for place in Self.Places do
-    if place.Id = placeId then
-      Exit(True);
-end;
-
 function TRSFarmingTravel.HasMethod(methodId: String): Boolean;
 var
   method: TRSFarmTravelMethod;
@@ -177,17 +139,6 @@ begin
   for method in Self.Methods do
     if method.Id = methodId then
       Exit(True);
-end;
-
-function TRSFarmingTravel.FindPlace(placeId: String): TRSFarmTravelPlace;
-var
-  place: TRSFarmTravelPlace;
-begin
-  for place in Self.Places do
-    if place.Id = placeId then
-      Exit(place);
-
-  raise Format('Unknown travel place "%s"', [placeId]);
 end;
 
 function TRSFarmingTravel.FindMethod(methodId: String): TRSFarmTravelMethod;
@@ -212,22 +163,6 @@ begin
       Exit(spell);
 
   raise Format('Unknown spell "%s" in travel.json', [spellName]);
-end;
-
-procedure TRSFarmingTravel.LoadMap(placeId: String);
-var
-  place: TRSFarmTravelPlace;
-begin
-  place := Self.FindPlace(placeId);
-  Map.AddEx([RSTranslator.Global2Chunk(place.MapArea.Expand(80))], [0]);
-end;
-
-function TRSFarmingTravel.AlreadyLocal(placeId: String): Boolean;
-var
-  place: TRSFarmTravelPlace;
-begin
-  place := Self.FindPlace(placeId);
-  Result := place.LocalArea.Contains(Map.Position);
 end;
 
 function TRSFarmingTravel.InLanding(landing: TRSFarmTravelLanding): Boolean;
@@ -318,31 +253,30 @@ end;
 function TRSFarmingTravel.POHPortal(method: TRSFarmTravelMethod; attempts: Integer): Boolean;
 begin
   Result := False;
-  raise Format('POH portal travel is not implemented yet (%s -> %s)', [method.Id, method.PlaceId]);
+  raise Format('POH portal travel is not implemented yet (%s -> %s)', [method.Id, method.ChunkId]);
 end;
 
 function TRSFarmingTravel.POHNexus(method: TRSFarmTravelMethod; attempts: Integer): Boolean;
 begin
   Result := False;
-  raise Format('POH nexus travel is not implemented yet (%s -> %s)', [method.Id, method.PlaceId]);
+  raise Format('POH nexus travel is not implemented yet (%s -> %s)', [method.Id, method.ChunkId]);
 end;
 
 function TRSFarmingTravel.POHSpiritTree(method: TRSFarmTravelMethod; attempts: Integer): Boolean;
 begin
   Result := False;
-  raise Format('POH spirit tree travel is not implemented yet (%s -> %s)', [method.Id, method.PlaceId]);
+  raise Format('POH spirit tree travel is not implemented yet (%s -> %s)', [method.Id, method.ChunkId]);
 end;
 
 function TRSFarmingTravel.POHFairyRing(method: TRSFarmTravelMethod; attempts: Integer): Boolean;
 begin
   Result := False;
-  raise Format('POH fairy ring travel is not implemented yet (%s -> %s)', [method.Id, method.PlaceId]);
+  raise Format('POH fairy ring travel is not implemented yet (%s -> %s)', [method.Id, method.ChunkId]);
 end;
 
 function TRSFarmingTravel.ConfirmOnly(method: TRSFarmTravelMethod; attempts: Integer): Boolean;
 begin
-  // No teleport — succeed if already in the place local area (within walking distance).
-  Result := Self.AlreadyLocal(method.PlaceId);
+  Result := FarmingChunks.ContainsPlayer(method.ChunkId);
 end;
 
 function TRSFarmingTravel.ExecuteMethod(method: TRSFarmTravelMethod; attempts: Integer): Boolean;
@@ -359,7 +293,7 @@ begin
 end;
 
 // Called by the farm run handler with the chosen transport method id.
-// Loads chunks, skips teleport when already in place.local, otherwise teleports and
+// Loads chunks, skips teleport when already in the chunk area, otherwise teleports and
 // confirms landing. Does not walk to the patch — WalkFind owns that.
 function TRSFarmingTravel.Travel(methodId: String; attempts: Integer = 2): Boolean;
 var
@@ -369,53 +303,27 @@ begin
     raise 'FarmingTravel.Init() must be called before Travel()';
 
   method := Self.FindMethod(methodId);
-  Self.LoadMap(method.PlaceId);
+  FarmingChunks.LoadMap(method.ChunkId);
 
-  if Self.AlreadyLocal(method.PlaceId) then
+  if FarmingChunks.ContainsPlayer(method.ChunkId) then
   begin
-    WriteLn(Format('%s:[FarmingTravel]: already local place=%s (skip %s)', [
-      GetTimeStamp(), method.PlaceId, method.Id
+    WriteLn(Format('%s:[FarmingTravel]: already in chunk=%s (skip %s)', [
+      GetTimeStamp(), method.ChunkId, method.Id
     ]));
     Exit(True);
   end;
 
-  WriteLn(Format('%s:[FarmingTravel]: method=%s type=%s place=%s landing=(%d,%d)r=%d', [
+  WriteLn(Format('%s:[FarmingTravel]: method=%s type=%s chunk=%s landing=(%d,%d)r=%d', [
     GetTimeStamp(),
     method.Id,
     ToStr(method.TravelType),
-    method.PlaceId,
+    method.ChunkId,
     method.Landing.X,
     method.Landing.Y,
     method.Landing.Radius
   ]));
 
   Result := Self.ExecuteMethod(method, attempts);
-end;
-
-procedure TRSFarmingTravel.ParsePlaces(root: TJSONItem);
-var
-  places: TJSONItem;
-  node: TJSONItem;
-  i: Integer;
-  place: TRSFarmTravelPlace;
-begin
-  places := root.Item['places'];
-  if places.Typ <> EJSONType.ARR then
-    raise 'travel.json places must be an array';
-
-  SetLength(Self.Places, places.Count);
-  for i := 0 to places.Count - 1 do
-  begin
-    node := places.Item[i];
-    place.Id := node.Item['id'].AsString;
-    place.MapArea := Self.BoxFromJSON(node.Item['map']);
-    if Self.JSONHas(node, 'local') then
-      place.LocalArea := Self.BoxFromJSON(node.Item['local'])
-    else
-      place.LocalArea := place.MapArea;
-    place.MethodIds := Self.StringArrayFromJSON(node.Item['methods']);
-    Self.Places[i] := place;
-  end;
 end;
 
 procedure TRSFarmingTravel.ParseMethods(root: TJSONItem);
@@ -435,7 +343,7 @@ begin
     node := methods.Item[i];
     method.Id := node.Item['id'].AsString;
     method.TravelType := ERSFarmTravelType.FromString(node.Item['type'].AsString);
-    method.PlaceId := node.Item['place'].AsString;
+    method.ChunkId := node.Item['chunk'].AsString;
     method.Landing := Self.LandingFromJSON(node.Item['landing']);
     method.Item := '';
     method.Option := '';
@@ -460,69 +368,36 @@ begin
           raise Format('Method "%s" requires spell', [method.Id]);
     end;
 
-    if not Self.HasPlace(method.PlaceId) then
-      raise Format('Method "%s" references unknown place "%s"', [method.Id, method.PlaceId]);
+    if not FarmingChunks.Has(method.ChunkId) then
+      raise Format('Method "%s" references unknown chunk "%s"', [method.Id, method.ChunkId]);
 
     Self.Methods[i] := method;
   end;
-end;
-
-procedure TRSFarmingTravel.ParsePatches(root: TJSONItem);
-var
-  patches: TJSONItem;
-  node: TJSONItem;
-  i: Integer;
-  patch: TRSFarmTravelPatch;
-  methodId: String;
-  place: TRSFarmTravelPlace;
-begin
-  patches := root.Item['patches'];
-  if patches.Typ <> EJSONType.ARR then
-    raise 'travel.json patches must be an array';
-
-  SetLength(Self.Patches, patches.Count);
-  for i := 0 to patches.Count - 1 do
-  begin
-    node := patches.Item[i];
-    patch.PatchId := node.Item['id'].AsString;
-    patch.PlaceId := node.Item['place'].AsString;
-
-    if not Self.HasPlace(patch.PlaceId) then
-      raise Format('Patch "%s" references unknown place "%s"', [patch.PatchId, patch.PlaceId]);
-
-    Self.Patches[i] := patch;
-  end;
-
-  // Every place method id must resolve; keeps GUI/runtime lists honest.
-  for place in Self.Places do
-    for methodId in place.MethodIds do
-      if not Self.HasMethod(methodId) then
-        raise Format('Place "%s" references unknown method "%s"', [place.Id, methodId]);
 end;
 
 procedure TRSFarmingTravel.Load(path: String = '');
 var
   parser: TJSONParser;
 begin
+  if not FarmingChunks.Loaded then
+    raise 'FarmingChunks.Init() must be called before FarmingTravel.Load()';
+
   Self.DataPath := Self.ResolveDataPath(path);
   parser := new TJSONParser();
   parser.Load(Self.DataPath);
-
-  Self.ParsePlaces(parser);
   Self.ParseMethods(parser);
-  Self.ParsePatches(parser);
   Self.Loaded := True;
 
-  WriteLn(Format('%s:[FarmingTravel]: loaded %s (%d places, %d methods, %d patches)', [
+  WriteLn(Format('%s:[FarmingTravel]: loaded %s (%d methods)', [
     GetTimeStamp(),
     Self.DataPath,
-    Length(Self.Places),
-    Length(Self.Methods),
-    Length(Self.Patches)
+    Length(Self.Methods)
   ]));
 end;
 
 procedure TRSFarmingTravel.Init(path: String = '');
 begin
+  if not FarmingChunks.Loaded then
+    FarmingChunks.Init();
   Self.Load(path);
 end;

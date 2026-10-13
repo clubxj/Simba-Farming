@@ -1,275 +1,74 @@
 {
-  "version": 2,
-  "places": [
-    {
-      "id": "weiss",
-      "map": [
-        7256,
-        34654,
-        7312,
-        34722
-      ],
-      "local": [
-        7256,
-        34654,
-        7312,
-        34722
-      ],
-      "methods": [
-        "icy_basalt"
-      ]
-    },
-    {
-      "id": "stronghold",
-      "map": [
-        7180,
-        35618,
-        7316,
-        35706
-      ],
-      "local": [
-        7180,
-        35618,
-        7316,
-        35706
-      ],
-      "methods": [
-        "stony_basalt"
-      ]
-    },
-    {
-      "id": "catherby",
-      "map": [
-        6896,
-        36494,
-        7364,
-        36730
-      ],
-      "local": [
-        6896,
-        36494,
-        7364,
-        36730
-      ],
-      "methods": [
-        "catherby_tablet",
-        "catherby_teleport",
-        "camelot_tablet",
-        "camelot_teleport",
-        "catherby_poh_portal",
-        "catherby_poh_nexus"
-      ]
-    },
-    {
-      "id": "ardougne_farm",
-      "map": [
-        6440,
-        36886,
-        6696,
-        37298
-      ],
-      "local": [
-        6440,
-        36886,
-        6696,
-        37298
-      ],
-      "methods": [
-        "ardougne_farm_cloak"
-      ]
-    },
-    {
-      "id": "ardougne_monastery",
-      "map": [
-        6268,
-        37478,
-        6556,
-        37614
-      ],
-      "local": [
-        6268,
-        37478,
-        6556,
-        37614
-      ],
-      "methods": [
-        "ardougne_monastery_cloak"
-      ]
-    },
-    {
-      "id": "hosidious",
-      "map": [
-        2816,
-        36138,
-        2968,
-        36386
-      ],
-      "local": [
-        2816,
-        36138,
-        2968,
-        36386
-      ],
-      "methods": [
-        "xeric_talisman_glade",
-        "hosidious_tablet",
-        "outside_poh",
-        "hosidious_construction_cape"
-      ]
-    },
-    {
-      "id": "falador_farm",
-      "map": [
-        7728,
-        36866,
-        8320,
-        37474
-      ],
-      "local": [
-        7728,
-        36866,
-        8320,
-        37474
-      ],
-      "methods": [
-        "falador_farm_explorers_ring",
-        "draynor_glory"
-      ]
-    },
-    {
-      "id": "phasmatys",
-      "map": [
-        10072,
-        36262,
-        10584,
-        36390
-      ],
-      "local": [
-        10072,
-        36262,
-        10584,
-        36390
-      ],
-      "methods": [
-        "ectophial",
-        "fenkenstrain_tablet",
-        "fenkenstrain_teleport",
-        "fenkenstrain_poh_portal",
-        "fenkenstrain_poh_nexus"
-      ]
-    },
-    {
-      "id": "farming_guild",
-      "map": [
-        796,
-        35338,
-        1144,
-        35582
-      ],
-      "local": [
-        796,
-        35338,
-        1144,
-        35582
-      ],
-      "methods": [
-        "farming_guild_skills_necklace",
-        "farming_guild_farming_cape",
-        "farming_guild_poh_spirit_tree",
-        "farming_guild_poh_fairy_ring"
-      ]
-    },
-    {
-      "id": "harmony_island",
-      "map": [
-        11012,
-        38910,
-        11268,
-        39162
-      ],
-      "local": [
-        11012,
-        38910,
-        11268,
-        39162
-      ],
-      "methods": [
-        "harmony_island_tablet",
-        "harmony_island_teleport",
-        "harmony_island_poh_portal",
-        "harmony_island_poh_nexus"
-      ]
-    }
-  ],
+  "version": 3,
   "methods": [
     {
       "id": "icy_basalt",
       "type": "item",
-      "place": "weiss",
+      "chunk": "weiss",
       "landing": [
         7284,
         34688,
         48
       ],
-      "item": "Icy basalt",
-      "option": "Teleport",
       "reqs": [
         [
           "Icy basalt"
         ]
-      ]
+      ],
+      "item": "Icy basalt",
+      "option": "Teleport"
     },
     {
       "id": "stony_basalt",
       "type": "item",
-      "place": "stronghold",
+      "chunk": "stronghold",
       "landing": [
         7248,
         35662,
         48
       ],
-      "item": "Stony basalt",
-      "option": "Teleport",
       "reqs": [
         [
           "Stony basalt"
         ]
-      ]
+      ],
+      "item": "Stony basalt",
+      "option": "Teleport"
     },
     {
       "id": "catherby_tablet",
       "type": "item",
-      "place": "catherby",
+      "chunk": "catherby",
       "landing": [
         7130,
         36612,
         48
       ],
-      "item": "Catherby teleport",
-      "option": "Break",
       "reqs": [
         [
           "Catherby teleport"
         ]
-      ]
+      ],
+      "item": "Catherby teleport",
+      "option": "Break"
     },
     {
       "id": "catherby_teleport",
       "type": "magic",
-      "place": "catherby",
+      "chunk": "catherby",
       "landing": [
         7130,
         36612,
         48
       ],
-      "spell": "CATHERBY_TELEPORT",
+      "reqs": [],
       "option": "Teleport",
-      "reqs": []
+      "spell": "CATHERBY_TELEPORT"
     },
     {
       "id": "catherby_poh_portal",
       "type": "poh_portal",
-      "place": "catherby",
+      "chunk": "catherby",
       "landing": [
         7130,
         36612,
@@ -286,7 +85,7 @@
     {
       "id": "catherby_poh_nexus",
       "type": "poh_nexus",
-      "place": "catherby",
+      "chunk": "catherby",
       "landing": [
         7130,
         36612,
@@ -303,37 +102,37 @@
     {
       "id": "camelot_tablet",
       "type": "item",
-      "place": "catherby",
+      "chunk": "catherby",
       "landing": [
         7130,
         36612,
         48
       ],
-      "item": "Camelot teleport",
-      "option": "Break",
       "reqs": [
         [
           "Camelot teleport"
         ]
-      ]
+      ],
+      "item": "Camelot teleport",
+      "option": "Break"
     },
     {
       "id": "camelot_teleport",
       "type": "magic",
-      "place": "catherby",
+      "chunk": "catherby",
       "landing": [
         7130,
         36612,
         48
       ],
-      "spell": "CAMELOT_TELEPORT",
+      "reqs": [],
       "option": "Teleport",
-      "reqs": []
+      "spell": "CAMELOT_TELEPORT"
     },
     {
       "id": "camelot_poh_portal",
       "type": "poh_portal",
-      "place": "catherby",
+      "chunk": "catherby",
       "landing": [
         7130,
         36612,
@@ -350,7 +149,7 @@
     {
       "id": "camelot_poh_nexus",
       "type": "poh_nexus",
-      "place": "catherby",
+      "chunk": "catherby",
       "landing": [
         7130,
         36612,
@@ -367,75 +166,75 @@
     {
       "id": "ardougne_farm_cloak",
       "type": "item",
-      "place": "ardougne_farm",
+      "chunk": "ardougne_farm",
       "landing": [
         6568,
         37092,
         48
       ],
-      "item": "Ardougne cloak",
-      "option": "Farm Teleport",
       "reqs": [
         [
           "Ardougne cloak"
         ]
-      ]
+      ],
+      "item": "Ardougne cloak",
+      "option": "Farm Teleport"
     },
     {
       "id": "ardougne_monastery_cloak",
       "type": "item",
-      "place": "ardougne_monastery",
+      "chunk": "ardougne_monastery",
       "landing": [
         6412,
         37546,
         48
       ],
-      "item": "Ardougne cloak",
-      "option": "Monastery Teleport",
       "reqs": [
         [
           "Ardougne cloak"
         ]
-      ]
+      ],
+      "item": "Ardougne cloak",
+      "option": "Monastery Teleport"
     },
     {
       "id": "xeric_talisman_glade",
       "type": "item",
-      "place": "hosidious",
+      "chunk": "hosidious",
       "landing": [
         2892,
         36262,
         48
       ],
-      "item": "Xeric's talisman",
-      "option": "Xeric's Glade",
       "reqs": [
         [
           "Xeric's talisman"
         ]
-      ]
+      ],
+      "item": "Xeric's talisman",
+      "option": "Xeric's Glade"
     },
     {
       "id": "hosidious_tablet",
       "type": "item",
-      "place": "hosidious",
+      "chunk": "hosidious",
       "landing": [
         2892,
         36262,
         48
       ],
-      "item": "Hosidius teleport",
-      "option": "Break",
       "reqs": [
         [
           "Hosidius teleport"
         ]
-      ]
+      ],
+      "item": "Hosidius teleport",
+      "option": "Break"
     },
     {
       "id": "outside_poh",
       "type": "confirm",
-      "place": "hosidious",
+      "chunk": "hosidious",
       "landing": [
         2892,
         36262,
@@ -446,88 +245,88 @@
     {
       "id": "hosidious_construction_cape",
       "type": "item",
-      "place": "hosidious",
+      "chunk": "hosidious",
       "landing": [
         2892,
         36262,
         48
       ],
-      "item": "Construct. cape",
-      "option": "Tele to POH",
       "reqs": [
         [
           "Construct. cape"
         ]
-      ]
+      ],
+      "item": "Construct. cape",
+      "option": "Tele to POH"
     },
     {
       "id": "falador_farm_explorers_ring",
       "type": "item",
-      "place": "falador_farm",
+      "chunk": "falador_farm",
       "landing": [
         8024,
         37170,
         48
       ],
-      "item": "Explorer's ring",
-      "option": "Teleport",
       "reqs": [
         [
           "Explorer's ring"
         ]
-      ]
+      ],
+      "item": "Explorer's ring",
+      "option": "Teleport"
     },
     {
       "id": "draynor_glory",
       "type": "item",
-      "place": "falador_farm",
+      "chunk": "falador_farm",
       "landing": [
         8024,
         37170,
         48
       ],
-      "item": "Amulet of glory",
-      "option": "Draynor Village",
       "reqs": [
         [
           "Amulet of glory"
         ]
-      ]
+      ],
+      "item": "Amulet of glory",
+      "option": "Draynor Village"
     },
     {
       "id": "fenkenstrain_teleport",
       "type": "magic",
-      "place": "phasmatys",
+      "chunk": "phasmatys",
       "landing": [
         10328,
         36326,
         48
       ],
-      "spell": "FENKENSTRAINS_CASTLE_TELEPORT",
+      "reqs": [],
       "option": "Teleport",
-      "reqs": []
+      "spell": "FENKENSTRAINS_CASTLE_TELEPORT"
     },
     {
       "id": "fenkenstrain_tablet",
       "type": "item",
-      "place": "phasmatys",
+      "chunk": "phasmatys",
       "landing": [
         10328,
         36326,
         48
       ],
-      "item": "Fenkenstrain's castle teleport",
-      "option": "Break",
       "reqs": [
         [
           "Fenkenstrain's castle teleport"
         ]
-      ]
+      ],
+      "item": "Fenkenstrain's castle teleport",
+      "option": "Break"
     },
     {
       "id": "fenkenstrain_poh_portal",
       "type": "poh_portal",
-      "place": "phasmatys",
+      "chunk": "phasmatys",
       "landing": [
         10328,
         36326,
@@ -544,7 +343,7 @@
     {
       "id": "fenkenstrain_poh_nexus",
       "type": "poh_nexus",
-      "place": "phasmatys",
+      "chunk": "phasmatys",
       "landing": [
         10328,
         36326,
@@ -561,58 +360,58 @@
     {
       "id": "ectophial",
       "type": "item",
-      "place": "phasmatys",
+      "chunk": "phasmatys",
       "landing": [
         10328,
         36326,
         48
       ],
-      "item": "Ectophial",
-      "option": "Empty",
       "reqs": [
         [
           "Ectophial"
         ]
-      ]
+      ],
+      "item": "Ectophial",
+      "option": "Empty"
     },
     {
       "id": "farming_guild_farming_cape",
       "type": "item",
-      "place": "farming_guild",
+      "chunk": "farming_guild",
       "landing": [
         970,
         35460,
         48
       ],
-      "item": "Farming cape",
-      "option": "Teleport",
       "reqs": [
         [
           "Farming cape"
         ]
-      ]
+      ],
+      "item": "Farming cape",
+      "option": "Teleport"
     },
     {
       "id": "farming_guild_skills_necklace",
       "type": "item",
-      "place": "farming_guild",
+      "chunk": "farming_guild",
       "landing": [
         970,
         35460,
         48
       ],
-      "item": "Skills necklace",
-      "option": "Farming Guild",
       "reqs": [
         [
           "Skills necklace"
         ]
-      ]
+      ],
+      "item": "Skills necklace",
+      "option": "Farming Guild"
     },
     {
       "id": "farming_guild_poh_spirit_tree",
       "type": "poh_spirit_tree",
-      "place": "farming_guild",
+      "chunk": "farming_guild",
       "landing": [
         970,
         35460,
@@ -630,7 +429,7 @@
     {
       "id": "farming_guild_poh_fairy_ring",
       "type": "poh_fairy_ring",
-      "place": "farming_guild",
+      "chunk": "farming_guild",
       "landing": [
         970,
         35460,
@@ -652,37 +451,37 @@
     {
       "id": "harmony_island_teleport",
       "type": "magic",
-      "place": "harmony_island",
+      "chunk": "harmony_island",
       "landing": [
         11140,
         39036,
         48
       ],
-      "spell": "HARMONY_ISLAND_TELEPORT",
+      "reqs": [],
       "option": "Teleport",
-      "reqs": []
+      "spell": "HARMONY_ISLAND_TELEPORT"
     },
     {
       "id": "harmony_island_tablet",
       "type": "item",
-      "place": "harmony_island",
+      "chunk": "harmony_island",
       "landing": [
         11140,
         39036,
         48
       ],
-      "item": "Harmony island teleport",
-      "option": "Break",
       "reqs": [
         [
           "Harmony island teleport"
         ]
-      ]
+      ],
+      "item": "Harmony island teleport",
+      "option": "Break"
     },
     {
       "id": "harmony_island_poh_portal",
       "type": "poh_portal",
-      "place": "harmony_island",
+      "chunk": "harmony_island",
       "landing": [
         11140,
         39036,
@@ -699,7 +498,7 @@
     {
       "id": "harmony_island_poh_nexus",
       "type": "poh_nexus",
-      "place": "harmony_island",
+      "chunk": "harmony_island",
       "landing": [
         11140,
         39036,
@@ -712,132 +511,6 @@
           "Law rune"
         ]
       ]
-    }
-  ],
-  "patches": [
-    {
-      "id": "WEISS_HERB",
-      "place": "weiss"
-    },
-    {
-      "id": "STRONGHOLD_HERB",
-      "place": "stronghold"
-    },
-    {
-      "id": "CATHERBY_HERB",
-      "place": "catherby"
-    },
-    {
-      "id": "CATHERBY_FLOWER",
-      "place": "catherby"
-    },
-    {
-      "id": "CATHERBY_ALLOT_N",
-      "place": "catherby"
-    },
-    {
-      "id": "CATHERBY_ALLOT_S",
-      "place": "catherby"
-    },
-    {
-      "id": "ARDOUGNE_HERB",
-      "place": "ardougne_farm"
-    },
-    {
-      "id": "ARDOUGNE_FLOWER",
-      "place": "ardougne_farm"
-    },
-    {
-      "id": "ARDOUGNE_ALLOT_N",
-      "place": "ardougne_farm"
-    },
-    {
-      "id": "ARDOUGNE_ALLOT_S",
-      "place": "ardougne_farm"
-    },
-    {
-      "id": "HOSIDIOUS_HERB",
-      "place": "hosidious"
-    },
-    {
-      "id": "HOSIDIOUS_FLOWER",
-      "place": "hosidious"
-    },
-    {
-      "id": "HOSIDIOUS_ALLOT_N",
-      "place": "hosidious"
-    },
-    {
-      "id": "HOSIDIOUS_ALLOT_S",
-      "place": "hosidious"
-    },
-    {
-      "id": "FALADOR_HERB",
-      "place": "falador_farm"
-    },
-    {
-      "id": "FALADOR_FLOWER",
-      "place": "falador_farm"
-    },
-    {
-      "id": "FALADOR_ALLOT_N",
-      "place": "falador_farm"
-    },
-    {
-      "id": "FALADOR_ALLOT_S",
-      "place": "falador_farm"
-    },
-    {
-      "id": "PHASMATYS_HERB",
-      "place": "phasmatys"
-    },
-    {
-      "id": "PHASMATYS_FLOWER",
-      "place": "phasmatys"
-    },
-    {
-      "id": "PHASMATYS_ALLOT_N",
-      "place": "phasmatys"
-    },
-    {
-      "id": "PHASMATYS_ALLOT_S",
-      "place": "phasmatys"
-    },
-    {
-      "id": "GUILD_HERB",
-      "place": "farming_guild"
-    },
-    {
-      "id": "GUILD_FLOWER",
-      "place": "farming_guild"
-    },
-    {
-      "id": "GUILD_ALLOT_N",
-      "place": "farming_guild"
-    },
-    {
-      "id": "GUILD_ALLOT_S",
-      "place": "farming_guild"
-    },
-    {
-      "id": "GUILD_BUSH",
-      "place": "farming_guild"
-    },
-    {
-      "id": "GUILD_CACTUS",
-      "place": "farming_guild"
-    },
-    {
-      "id": "HARMONY_ISLAND_HERB",
-      "place": "harmony_island"
-    },
-    {
-      "id": "HARMONY_ISLAND_ALLOT",
-      "place": "harmony_island"
-    },
-    {
-      "id": "MONESTARY_BUSH",
-      "place": "ardougne_monastery"
     }
   ]
 }

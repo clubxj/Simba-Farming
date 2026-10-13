@@ -1,0 +1,165 @@
+{$INCLUDE_ONCE WaspLib/osrs.simba}
+
+type
+  // Farm map area in WaspLib chunk coordinates (256x256 map tiles).
+  // `Chunks` is a chunk-space box like [30, 30, 32, 28] passed to Map.AddEx.
+  TRSFarmChunk = record
+    Id: String;
+    Chunks: TBox;
+    Layers: TIntegerArray;
+  end;
+
+  TRSFarmingChunks = record
+    Loaded: Boolean;
+    DataPath: String;
+    Items: array of TRSFarmChunk;
+  end;
+
+var FarmingChunks: TRSFarmingChunks;
+
+function TRSFarmingChunks.BoxFromJSON(item: TJSONItem): TBox; static;
+begin
+  if (item.Typ <> EJSONType.ARR) or (item.Count <> 4) then
+    raise 'Expected chunk box [x1, y1, x2, y2] in chunk coordinates';
+
+  Result := [
+    item.Item[0].AsInt,
+    item.Item[1].AsInt,
+    item.Item[2].AsInt,
+    item.Item[3].AsInt
+  ];
+end;
+
+function TRSFarmingChunks.IntArrayFromJSON(item: TJSONItem): TIntegerArray; static;
+var
+  i: Integer;
+begin
+  if item.Typ <> EJSONType.ARR then
+    raise 'Expected JSON array of integers';
+
+  SetLength(Result, item.Count);
+  for i := 0 to item.Count - 1 do
+    Result[i] := item.Item[i].AsInt;
+end;
+
+function TRSFarmingChunks.JSONHas(item: TJSONItem; key: String): Boolean; static;
+begin
+  try
+    Result := item.Item[key].Typ <> EJSONType.UNKNOWN;
+  except
+    Result := False;
+  end;
+end;
+
+function TRSFarmingChunks.ResolveDataPath(path: String): String;
+var
+  candidate: String;
+  candidates: TStringArray;
+begin
+  if path <> '' then
+  begin
+    if not FileExists(path) then
+      raise Format('Chunk data file not found: %s', [path]);
+    Exit(path);
+  end;
+
+  candidates := [
+    IncludePath + 'data/chunks.json',
+    IncludePath + '../data/chunks.json',
+    './data/chunks.json',
+    'data/chunks.json'
+  ];
+
+  for candidate in candidates do
+    if FileExists(candidate) then
+      Exit(candidate);
+
+  raise 'chunks.json not found. Pass an absolute path to FarmingChunks.Init()';
+end;
+
+function TRSFarmingChunks.Has(chunkId: String): Boolean;
+var
+  chunk: TRSFarmChunk;
+begin
+  for chunk in Self.Items do
+    if chunk.Id = chunkId then
+      Exit(True);
+end;
+
+function TRSFarmingChunks.Find(chunkId: String): TRSFarmChunk;
+var
+  chunk: TRSFarmChunk;
+begin
+  for chunk in Self.Items do
+    if chunk.Id = chunkId then
+      Exit(chunk);
+
+  raise Format('Unknown farm chunk "%s"', [chunkId]);
+end;
+
+// Load the chunk-space area into the walker map.
+procedure TRSFarmingChunks.LoadMap(chunkId: String);
+var
+  chunk: TRSFarmChunk;
+begin
+  chunk := Self.Find(chunkId);
+  Map.AddEx([chunk.Chunks], chunk.Layers);
+end;
+
+// True when the player's current map chunk lies inside the farm chunk area.
+function TRSFarmingChunks.ContainsPlayer(chunkId: String): Boolean;
+var
+  chunk: TRSFarmChunk;
+  playerChunk: TPoint;
+begin
+  chunk := Self.Find(chunkId);
+  playerChunk := RSTranslator.Global2Chunk(Map.Position);
+  Result := chunk.Chunks.Normalize.Contains(playerChunk);
+end;
+
+procedure TRSFarmingChunks.Parse(root: TJSONItem);
+var
+  nodes: TJSONItem;
+  node: TJSONItem;
+  i: Integer;
+  chunk: TRSFarmChunk;
+begin
+  nodes := root.Item['chunks'];
+  if nodes.Typ <> EJSONType.ARR then
+    raise 'chunks.json chunks must be an array';
+
+  SetLength(Self.Items, nodes.Count);
+  for i := 0 to nodes.Count - 1 do
+  begin
+    node := nodes.Item[i];
+    chunk.Id := node.Item['id'].AsString;
+    chunk.Chunks := Self.BoxFromJSON(node.Item['chunks']);
+    if Self.JSONHas(node, 'layers') then
+      chunk.Layers := Self.IntArrayFromJSON(node.Item['layers'])
+    else
+      chunk.Layers := [0];
+    Self.Items[i] := chunk;
+  end;
+end;
+
+procedure TRSFarmingChunks.Load(path: String = '');
+var
+  parser: TJSONParser;
+begin
+  Self.DataPath := Self.ResolveDataPath(path);
+  parser := new TJSONParser();
+  parser.Load(Self.DataPath);
+  Self.Parse(parser);
+  Self.Loaded := True;
+
+  WriteLn(Format('%s:[FarmingChunks]: loaded %s (%d chunks)', [
+    GetTimeStamp(),
+    Self.DataPath,
+    Length(Self.Items)
+  ]));
+end;
+
+procedure TRSFarmingChunks.Init(path: String = '');
+begin
+  Self.Load(path);
+end;

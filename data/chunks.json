@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "chunks": [
+    {
+      "id": "weiss",
+      "chunks": [
+        28,
+        135,
+        28,
+        135
+      ],
+      "layers": [
+        0
+      ]
+    },
+    {
+      "id": "stronghold",
+      "chunks": [
+        27,
+        138,
+        28,
+        139
+      ],
+      "layers": [
+        0
+      ]
+    },
+    {
+      "id": "catherby",
+      "chunks": [
+        26,
+        142,
+        29,
+        143
+      ],
+      "layers": [
+        0
+      ]
+    },
+    {
+      "id": "ardougne_farm",
+      "chunks": [
+        24,
+        143,
+        26,
+        146
+      ],
+      "layers": [
+        0
+      ]
+    },
+    {
+      "id": "ardougne_monastery",
+      "chunks": [
+        24,
+        146,
+        25,
+        147
+      ],
+      "layers": [
+        0
+      ]
+    },
+    {
+      "id": "hosidious",
+      "chunks": [
+        10,
+        140,
+        11,
+        142
+      ],
+      "layers": [
+        0
+      ]
+    },
+    {
+      "id": "falador_farm",
+      "chunks": [
+        29,
+        143,
+        32,
+        146
+      ],
+      "layers": [
+        0
+      ]
+    },
+    {
+      "id": "phasmatys",
+      "chunks": [
+        39,
+        141,
+        41,
+        142
+      ],
+      "layers": [
+        0
+      ]
+    },
+    {
+      "id": "farming_guild",
+      "chunks": [
+        2,
+        137,
+        4,
+        139
+      ],
+      "layers": [
+        0
+      ]
+    },
+    {
+      "id": "harmony_island",
+      "chunks": [
+        42,
+        151,
+        44,
+        153
+      ],
+      "layers": [
+        0
+      ]
+    }
+  ]
+}

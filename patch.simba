@@ -10,6 +10,7 @@ end;
 {$INCLUDE_ONCE WaspLib/osrs.simba}
 
 {$INCLUDE_ONCE farming_types.simba}
+{$INCLUDE_ONCE chunks.simba}
 {$INCLUDE_ONCE travel.simba}
 {$INCLUDE_ONCE patch_data.simba}
 {$INCLUDE_ONCE tool_leprechaun.simba}
