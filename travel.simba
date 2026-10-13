@@ -12,37 +12,48 @@ type
   );
 
   // Reqs: AND of OR-groups. Each inner array is alternatives; all groups must be met.
-  // Example fairy ring: [["Construct. cape", "Teleport to house", "Law rune"], ["Dramen staff", "Lunar staff"]]
   // Loaded for future GUI validation — travel runtime does not check them.
   TRSFarmTravelReqs = array of TStringArray;
 
-  TRSFarmTravelDestination = record
+  // Place = farm chunk area. map → Map.AddEx; local → skip-tele when already here.
+  // Transport only gets you into local / onto a landing; WalkFind + walker handle the rest.
+  TRSFarmTravelPlace = record
     Id: String;
     MapArea: TBox;
+    LocalArea: TBox;
+    MethodIds: TStringArray;
+  end;
+
+  // Teleport landing jitter: center + radius (world coords).
+  TRSFarmTravelLanding = record
+    X: Integer;
+    Y: Integer;
+    Radius: Integer;
   end;
 
   TRSFarmTravelMethod = record
     Id: String;
     TravelType: ERSFarmTravelType;
-    DestinationId: String;
+    PlaceId: String;
+    Landing: TRSFarmTravelLanding;
     Item: TRSItem;
     Option: String;
     SpellName: String;
     Reqs: TRSFarmTravelReqs;
   end;
 
-  TRSFarmTravelPatchRoute = record
+  // Patch → place for GUI association and TravelToPatch. Methods come from the place.
+  TRSFarmTravelPatch = record
     PatchId: String;
-    DestinationId: String;
-    MethodIds: TStringArray;
+    PlaceId: String;
   end;
 
   TRSFarmingTravel = record
     Loaded: Boolean;
     DataPath: String;
-    Destinations: array of TRSFarmTravelDestination;
+    Places: array of TRSFarmTravelPlace;
     Methods: array of TRSFarmTravelMethod;
-    Patches: array of TRSFarmTravelPatchRoute;
+    Patches: array of TRSFarmTravelPatch;
   end;
 
 var FarmingTravel: TRSFarmingTravel;
@@ -65,7 +76,7 @@ end;
 function TRSFarmingTravel.BoxFromJSON(item: TJSONItem): TBox; static;
 begin
   if (item.Typ <> EJSONType.ARR) or (item.Count <> 4) then
-    raise 'Travel destination map must be [x1, y1, x2, y2]';
+    raise 'Expected map/local box [x1, y1, x2, y2]';
 
   Result := [
     item.Item[0].AsInt,
@@ -73,6 +84,18 @@ begin
     item.Item[2].AsInt,
     item.Item[3].AsInt
   ];
+end;
+
+function TRSFarmingTravel.LandingFromJSON(item: TJSONItem): TRSFarmTravelLanding; static;
+begin
+  if (item.Typ <> EJSONType.ARR) or (item.Count <> 3) then
+    raise 'Expected landing [x, y, radius]';
+
+  Result.X := item.Item[0].AsInt;
+  Result.Y := item.Item[1].AsInt;
+  Result.Radius := item.Item[2].AsInt;
+  if Result.Radius <= 0 then
+    raise 'Landing radius must be > 0';
 end;
 
 function TRSFarmingTravel.StringArrayFromJSON(item: TJSONItem): TStringArray; static;
@@ -138,12 +161,12 @@ begin
   raise 'travel.json not found. Pass an absolute path to FarmingTravel.Init()';
 end;
 
-function TRSFarmingTravel.HasDestination(destinationId: String): Boolean;
+function TRSFarmingTravel.HasPlace(placeId: String): Boolean;
 var
-  destination: TRSFarmTravelDestination;
+  place: TRSFarmTravelPlace;
 begin
-  for destination in Self.Destinations do
-    if destination.Id = destinationId then
+  for place in Self.Places do
+    if place.Id = placeId then
       Exit(True);
 end;
 
@@ -156,15 +179,15 @@ begin
       Exit(True);
 end;
 
-function TRSFarmingTravel.FindDestination(destinationId: String): TRSFarmTravelDestination;
+function TRSFarmingTravel.FindPlace(placeId: String): TRSFarmTravelPlace;
 var
-  destination: TRSFarmTravelDestination;
+  place: TRSFarmTravelPlace;
 begin
-  for destination in Self.Destinations do
-    if destination.Id = destinationId then
-      Exit(destination);
+  for place in Self.Places do
+    if place.Id = placeId then
+      Exit(place);
 
-  raise Format('Unknown travel destination "%s"', [destinationId]);
+  raise Format('Unknown travel place "%s"', [placeId]);
 end;
 
 function TRSFarmingTravel.FindMethod(methodId: String): TRSFarmTravelMethod;
@@ -178,15 +201,34 @@ begin
   raise Format('Unknown travel method "%s"', [methodId]);
 end;
 
-function TRSFarmingTravel.FindPatchRoute(patchId: String): TRSFarmTravelPatchRoute;
+function TRSFarmingTravel.FindPatch(patchId: String): TRSFarmTravelPatch;
 var
-  route: TRSFarmTravelPatchRoute;
+  patch: TRSFarmTravelPatch;
 begin
-  for route in Self.Patches do
-    if route.PatchId = patchId then
-      Exit(route);
+  for patch in Self.Patches do
+    if patch.PatchId = patchId then
+      Exit(patch);
 
-  raise Format('No travel route configured for patch "%s"', [patchId]);
+  raise Format('No travel place configured for patch "%s"', [patchId]);
+end;
+
+function TRSFarmingTravel.MethodsForPlace(placeId: String): TStringArray;
+begin
+  Result := Self.FindPlace(placeId).MethodIds;
+end;
+
+function TRSFarmingTravel.MethodsForPatch(patchId: String): TStringArray;
+begin
+  Result := Self.MethodsForPlace(Self.FindPatch(patchId).PlaceId);
+end;
+
+function TRSFarmingTravel.PatchesForPlace(placeId: String): TStringArray;
+var
+  patch: TRSFarmTravelPatch;
+begin
+  for patch in Self.Patches do
+    if patch.PlaceId = placeId then
+      Result += patch.PatchId;
 end;
 
 function TRSFarmingTravel.SpellFromName(spellName: String): ERSSpell;
@@ -202,28 +244,36 @@ begin
   raise Format('Unknown spell "%s" in travel.json', [spellName]);
 end;
 
-procedure TRSFarmingTravel.LoadMap(destinationId: String);
+procedure TRSFarmingTravel.LoadMap(placeId: String);
 var
-  destination: TRSFarmTravelDestination;
+  place: TRSFarmTravelPlace;
 begin
-  destination := Self.FindDestination(destinationId);
-  Map.AddEx([RSTranslator.Global2Chunk(destination.MapArea.Expand(80))], [0]);
+  place := Self.FindPlace(placeId);
+  Map.AddEx([RSTranslator.Global2Chunk(place.MapArea.Expand(80))], [0]);
 end;
 
-function TRSFarmingTravel.Confirm(destinationId: String; timeout: Integer = 3000): Boolean;
+function TRSFarmingTravel.AlreadyLocal(placeId: String): Boolean;
 var
-  destination: TRSFarmTravelDestination;
+  place: TRSFarmTravelPlace;
 begin
-  destination := Self.FindDestination(destinationId);
-  Result := SleepUntil(Map.Position in destination.MapArea, Random(100, 600), timeout);
+  place := Self.FindPlace(placeId);
+  Result := place.LocalArea.Contains(Map.Position);
 end;
 
-function TRSFarmingTravel.AlreadyThere(destinationId: String): Boolean;
+function TRSFarmingTravel.InLanding(landing: TRSFarmTravelLanding): Boolean;
 var
-  destination: TRSFarmTravelDestination;
+  pos: TPoint;
+  dx, dy: Integer;
 begin
-  destination := Self.FindDestination(destinationId);
-  Result := destination.MapArea.Contains(Map.Position);
+  pos := Map.Position;
+  dx := pos.X - landing.X;
+  dy := pos.Y - landing.Y;
+  Result := Sqrt(Sqr(dx) + Sqr(dy)) <= landing.Radius;
+end;
+
+function TRSFarmingTravel.ConfirmLanding(landing: TRSFarmTravelLanding; timeout: Integer = 3000): Boolean;
+begin
+  Result := SleepUntil(Self.InLanding(landing), Random(100, 600), timeout);
 end;
 
 function TRSFarmingTravel.TryItemOnInterface(method: TRSFarmTravelMethod; items: TRSItemInterface; slots: TRSSlotInterface; attempts: Integer): Boolean;
@@ -238,23 +288,19 @@ begin
       if MainScreen.IsUpText(method.Option) then
       begin
         Mouse.Click(EMouseButton.LEFT);
-        Exit(Self.Confirm(method.DestinationId));
+        Exit(Self.ConfirmLanding(method.Landing));
       end else if ChooseOption.Open then
       begin
         if ChooseOption.Find([method.Option], False, False) then
-          Exit(ChooseOption.Select(method.Option, False, True) and Self.Confirm(method.DestinationId))
+          Exit(ChooseOption.Select(method.Option, False, True) and Self.ConfirmLanding(method.Landing))
         else if ChooseOption.OpenSubmenu(True) then
-          Exit(ChooseOption.SelectSubmenuOption([method.Option], False, True) and Self.Confirm(method.DestinationId));
+          Exit(ChooseOption.SelectSubmenuOption([method.Option], False, True) and Self.ConfirmLanding(method.Landing));
       end;
     end;
 end;
 
 function TRSFarmingTravel.ItemTeleport(method: TRSFarmTravelMethod; attempts: Integer): Boolean;
 begin
-  Self.LoadMap(method.DestinationId);
-  if Self.AlreadyThere(method.DestinationId) then
-    Exit(True);
-
   if Inventory.IsOpen then
   begin
     if Self.TryItemOnInterface(method, Inventory.Items, Inventory.Slots, attempts) then
@@ -285,14 +331,8 @@ function TRSFarmingTravel.MagicTeleport(method: TRSFarmTravelMethod; attempts: I
 var
   attempt: Integer;
   spell: ERSSpell;
-  destination: TRSFarmTravelDestination;
 begin
-  Self.LoadMap(method.DestinationId);
-  if Self.AlreadyThere(method.DestinationId) then
-    Exit(True);
-
   spell := Self.SpellFromName(method.SpellName);
-  destination := Self.FindDestination(method.DestinationId);
 
   for attempt := 1 to attempts do
   begin
@@ -300,7 +340,7 @@ begin
       if not (Magic.CastSpell(ERSSpell.SPELLBOOK_SWAP) and SleepUntil((Magic.GetSpellBook <> ERSSpellBook.LUNAR), Random(100, 800), 3000)) then
         Continue;
 
-    if Magic.CastSpell(spell, method.Option) and SleepUntil(destination.MapArea.Contains(Map.Position), Random(100, 800), 2400) then
+    if Magic.CastSpell(spell, method.Option) and Self.ConfirmLanding(method.Landing, 2400) then
       Exit(True);
   end;
 end;
@@ -308,48 +348,35 @@ end;
 function TRSFarmingTravel.POHPortal(method: TRSFarmTravelMethod; attempts: Integer): Boolean;
 begin
   Result := False;
-  raise Format('POH portal travel is not implemented yet (%s -> %s)', [method.Id, method.DestinationId]);
+  raise Format('POH portal travel is not implemented yet (%s -> %s)', [method.Id, method.PlaceId]);
 end;
 
 function TRSFarmingTravel.POHNexus(method: TRSFarmTravelMethod; attempts: Integer): Boolean;
 begin
   Result := False;
-  raise Format('POH nexus travel is not implemented yet (%s -> %s)', [method.Id, method.DestinationId]);
+  raise Format('POH nexus travel is not implemented yet (%s -> %s)', [method.Id, method.PlaceId]);
 end;
 
 function TRSFarmingTravel.POHSpiritTree(method: TRSFarmTravelMethod; attempts: Integer): Boolean;
 begin
   Result := False;
-  raise Format('POH spirit tree travel is not implemented yet (%s -> %s)', [method.Id, method.DestinationId]);
+  raise Format('POH spirit tree travel is not implemented yet (%s -> %s)', [method.Id, method.PlaceId]);
 end;
 
 function TRSFarmingTravel.POHFairyRing(method: TRSFarmTravelMethod; attempts: Integer): Boolean;
 begin
   Result := False;
-  raise Format('POH fairy ring travel is not implemented yet (%s -> %s)', [method.Id, method.DestinationId]);
+  raise Format('POH fairy ring travel is not implemented yet (%s -> %s)', [method.Id, method.PlaceId]);
 end;
 
 function TRSFarmingTravel.ConfirmOnly(method: TRSFarmTravelMethod; attempts: Integer): Boolean;
 begin
-  Self.LoadMap(method.DestinationId);
-  Result := Self.Confirm(method.DestinationId);
+  // No teleport — succeed if already in the place local area (within walking distance).
+  Result := Self.AlreadyLocal(method.PlaceId);
 end;
 
-function TRSFarmingTravel.Travel(methodId: String; attempts: Integer = 2): Boolean;
-var
-  method: TRSFarmTravelMethod;
+function TRSFarmingTravel.ExecuteMethod(method: TRSFarmTravelMethod; attempts: Integer): Boolean;
 begin
-  if not Self.Loaded then
-    raise 'FarmingTravel.Init() must be called before Travel()';
-
-  method := Self.FindMethod(methodId);
-  WriteLn(Format('%s:[FarmingTravel]: method=%s type=%s destination=%s', [
-    GetTimeStamp(),
-    method.Id,
-    ToStr(method.TravelType),
-    method.DestinationId
-  ]));
-
   case method.TravelType of
     ERSFarmTravelType.ITEM:            Exit(Self.ItemTeleport(method, attempts));
     ERSFarmTravelType.MAGIC:           Exit(Self.MagicTeleport(method, attempts));
@@ -361,43 +388,95 @@ begin
   end;
 end;
 
+// Get within walking distance of a place via one method. Does not walk to the patch.
+function TRSFarmingTravel.Travel(methodId: String; attempts: Integer = 2): Boolean;
+var
+  method: TRSFarmTravelMethod;
+begin
+  if not Self.Loaded then
+    raise 'FarmingTravel.Init() must be called before Travel()';
+
+  method := Self.FindMethod(methodId);
+  Self.LoadMap(method.PlaceId);
+
+  if Self.AlreadyLocal(method.PlaceId) then
+  begin
+    WriteLn(Format('%s:[FarmingTravel]: already local place=%s (skip %s)', [
+      GetTimeStamp(), method.PlaceId, method.Id
+    ]));
+    Exit(True);
+  end;
+
+  WriteLn(Format('%s:[FarmingTravel]: method=%s type=%s place=%s landing=(%d,%d)r=%d', [
+    GetTimeStamp(),
+    method.Id,
+    ToStr(method.TravelType),
+    method.PlaceId,
+    method.Landing.X,
+    method.Landing.Y,
+    method.Landing.Radius
+  ]));
+
+  Result := Self.ExecuteMethod(method, attempts);
+end;
+
+// Get within walking distance of the patch's place. WalkFind owns pathing after this.
 function TRSFarmingTravel.TravelToPatch(patchId: String; preferredMethod: String = ''; attempts: Integer = 2): Boolean;
 var
-  route: TRSFarmTravelPatchRoute;
+  patch: TRSFarmTravelPatch;
+  place: TRSFarmTravelPlace;
   methodId: String;
 begin
-  route := Self.FindPatchRoute(patchId);
+  if not Self.Loaded then
+    raise 'FarmingTravel.Init() must be called before TravelToPatch()';
+
+  patch := Self.FindPatch(patchId);
+  place := Self.FindPlace(patch.PlaceId);
+  Self.LoadMap(place.Id);
+
+  if Self.AlreadyLocal(place.Id) then
+  begin
+    WriteLn(Format('%s:[FarmingTravel]: already local place=%s for patch=%s (skip teleport)', [
+      GetTimeStamp(), place.Id, patchId
+    ]));
+    Exit(True);
+  end;
 
   if preferredMethod <> '' then
   begin
-    if not route.MethodIds.Contains(preferredMethod) then
-      raise Format('Method "%s" is not allowed for patch "%s"', [preferredMethod, patchId]);
+    if not place.MethodIds.Contains(preferredMethod) then
+      raise Format('Method "%s" is not allowed for place "%s" (patch %s)', [preferredMethod, place.Id, patchId]);
     Exit(Self.Travel(preferredMethod, attempts));
   end;
 
-  for methodId in route.MethodIds do
+  for methodId in place.MethodIds do
     if Self.Travel(methodId, attempts) then
       Exit(True);
 end;
 
-procedure TRSFarmingTravel.ParseDestinations(root: TJSONItem);
+procedure TRSFarmingTravel.ParsePlaces(root: TJSONItem);
 var
-  destinations: TJSONItem;
+  places: TJSONItem;
   node: TJSONItem;
   i: Integer;
-  destination: TRSFarmTravelDestination;
+  place: TRSFarmTravelPlace;
 begin
-  destinations := root.Item['destinations'];
-  if destinations.Typ <> EJSONType.ARR then
-    raise 'travel.json destinations must be an array';
+  places := root.Item['places'];
+  if places.Typ <> EJSONType.ARR then
+    raise 'travel.json places must be an array';
 
-  SetLength(Self.Destinations, destinations.Count);
-  for i := 0 to destinations.Count - 1 do
+  SetLength(Self.Places, places.Count);
+  for i := 0 to places.Count - 1 do
   begin
-    node := destinations.Item[i];
-    destination.Id := node.Item['id'].AsString;
-    destination.MapArea := Self.BoxFromJSON(node.Item['map']);
-    Self.Destinations[i] := destination;
+    node := places.Item[i];
+    place.Id := node.Item['id'].AsString;
+    place.MapArea := Self.BoxFromJSON(node.Item['map']);
+    if Self.JSONHas(node, 'local') then
+      place.LocalArea := Self.BoxFromJSON(node.Item['local'])
+    else
+      place.LocalArea := place.MapArea;
+    place.MethodIds := Self.StringArrayFromJSON(node.Item['methods']);
+    Self.Places[i] := place;
   end;
 end;
 
@@ -418,7 +497,8 @@ begin
     node := methods.Item[i];
     method.Id := node.Item['id'].AsString;
     method.TravelType := ERSFarmTravelType.FromString(node.Item['type'].AsString);
-    method.DestinationId := node.Item['destination'].AsString;
+    method.PlaceId := node.Item['place'].AsString;
+    method.Landing := Self.LandingFromJSON(node.Item['landing']);
     method.Item := '';
     method.Option := '';
     method.SpellName := '';
@@ -442,8 +522,8 @@ begin
           raise Format('Method "%s" requires spell', [method.Id]);
     end;
 
-    if not Self.HasDestination(method.DestinationId) then
-      raise Format('Method "%s" references unknown destination "%s"', [method.Id, method.DestinationId]);
+    if not Self.HasPlace(method.PlaceId) then
+      raise Format('Method "%s" references unknown place "%s"', [method.Id, method.PlaceId]);
 
     Self.Methods[i] := method;
   end;
@@ -454,8 +534,9 @@ var
   patches: TJSONItem;
   node: TJSONItem;
   i: Integer;
-  route: TRSFarmTravelPatchRoute;
+  patch: TRSFarmTravelPatch;
   methodId: String;
+  place: TRSFarmTravelPlace;
 begin
   patches := root.Item['patches'];
   if patches.Typ <> EJSONType.ARR then
@@ -465,19 +546,20 @@ begin
   for i := 0 to patches.Count - 1 do
   begin
     node := patches.Item[i];
-    route.PatchId := node.Item['id'].AsString;
-    route.DestinationId := node.Item['destination'].AsString;
-    route.MethodIds := Self.StringArrayFromJSON(node.Item['methods']);
+    patch.PatchId := node.Item['id'].AsString;
+    patch.PlaceId := node.Item['place'].AsString;
 
-    if not Self.HasDestination(route.DestinationId) then
-      raise Format('Patch "%s" references unknown destination "%s"', [route.PatchId, route.DestinationId]);
+    if not Self.HasPlace(patch.PlaceId) then
+      raise Format('Patch "%s" references unknown place "%s"', [patch.PatchId, patch.PlaceId]);
 
-    for methodId in route.MethodIds do
-      if not Self.HasMethod(methodId) then
-        raise Format('Patch "%s" references unknown method "%s"', [route.PatchId, methodId]);
-
-    Self.Patches[i] := route;
+    Self.Patches[i] := patch;
   end;
+
+  // Every place method id must resolve; keeps GUI/runtime lists honest.
+  for place in Self.Places do
+    for methodId in place.MethodIds do
+      if not Self.HasMethod(methodId) then
+        raise Format('Place "%s" references unknown method "%s"', [place.Id, methodId]);
 end;
 
 procedure TRSFarmingTravel.Load(path: String = '');
@@ -488,15 +570,15 @@ begin
   parser := new TJSONParser();
   parser.Load(Self.DataPath);
 
-  Self.ParseDestinations(parser);
+  Self.ParsePlaces(parser);
   Self.ParseMethods(parser);
   Self.ParsePatches(parser);
   Self.Loaded := True;
 
-  WriteLn(Format('%s:[FarmingTravel]: loaded %s (%d destinations, %d methods, %d patches)', [
+  WriteLn(Format('%s:[FarmingTravel]: loaded %s (%d places, %d methods, %d patches)', [
     GetTimeStamp(),
     Self.DataPath,
-    Length(Self.Destinations),
+    Length(Self.Places),
     Length(Self.Methods),
     Length(Self.Patches)
   ]));
@@ -515,10 +597,18 @@ begin
     Result += method.Id;
 end;
 
+function TRSFarmingTravel.PlaceIds(): TStringArray;
+var
+  place: TRSFarmTravelPlace;
+begin
+  for place in Self.Places do
+    Result += place.Id;
+end;
+
 function TRSFarmingTravel.PatchIds(): TStringArray;
 var
-  route: TRSFarmTravelPatchRoute;
+  patch: TRSFarmTravelPatch;
 begin
-  for route in Self.Patches do
-    Result += route.PatchId;
+  for patch in Self.Patches do
+    Result += patch.PatchId;
 end;

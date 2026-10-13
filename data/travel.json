@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "destinations": [
+  "version": 2,
+  "places": [
     {
       "id": "weiss",
       "map": [
@@ -8,6 +8,15 @@
         34654,
         7312,
         34722
+      ],
+      "local": [
+        7256,
+        34654,
+        7312,
+        34722
+      ],
+      "methods": [
+        "icy_basalt"
       ]
     },
     {
@@ -17,6 +26,15 @@
         35618,
         7316,
         35706
+      ],
+      "local": [
+        7180,
+        35618,
+        7316,
+        35706
+      ],
+      "methods": [
+        "stony_basalt"
       ]
     },
     {
@@ -26,6 +44,20 @@
         36494,
         7364,
         36730
+      ],
+      "local": [
+        6896,
+        36494,
+        7364,
+        36730
+      ],
+      "methods": [
+        "catherby_tablet",
+        "catherby_teleport",
+        "camelot_tablet",
+        "camelot_teleport",
+        "catherby_poh_portal",
+        "catherby_poh_nexus"
       ]
     },
     {
@@ -35,6 +67,15 @@
         36886,
         6696,
         37298
+      ],
+      "local": [
+        6440,
+        36886,
+        6696,
+        37298
+      ],
+      "methods": [
+        "ardougne_farm_cloak"
       ]
     },
     {
@@ -44,6 +85,15 @@
         37478,
         6556,
         37614
+      ],
+      "local": [
+        6268,
+        37478,
+        6556,
+        37614
+      ],
+      "methods": [
+        "ardougne_monastery_cloak"
       ]
     },
     {
@@ -53,6 +103,18 @@
         36138,
         2968,
         36386
+      ],
+      "local": [
+        2816,
+        36138,
+        2968,
+        36386
+      ],
+      "methods": [
+        "xeric_talisman_glade",
+        "hosidious_tablet",
+        "outside_poh",
+        "hosidious_construction_cape"
       ]
     },
     {
@@ -62,6 +124,16 @@
         36866,
         8320,
         37474
+      ],
+      "local": [
+        7728,
+        36866,
+        8320,
+        37474
+      ],
+      "methods": [
+        "falador_farm_explorers_ring",
+        "draynor_glory"
       ]
     },
     {
@@ -71,6 +143,19 @@
         36262,
         10584,
         36390
+      ],
+      "local": [
+        10072,
+        36262,
+        10584,
+        36390
+      ],
+      "methods": [
+        "ectophial",
+        "fenkenstrain_tablet",
+        "fenkenstrain_teleport",
+        "fenkenstrain_poh_portal",
+        "fenkenstrain_poh_nexus"
       ]
     },
     {
@@ -80,6 +165,18 @@
         35338,
         1144,
         35582
+      ],
+      "local": [
+        796,
+        35338,
+        1144,
+        35582
+      ],
+      "methods": [
+        "farming_guild_skills_necklace",
+        "farming_guild_farming_cape",
+        "farming_guild_poh_spirit_tree",
+        "farming_guild_poh_fairy_ring"
       ]
     },
     {
@@ -89,6 +186,18 @@
         38910,
         11268,
         39162
+      ],
+      "local": [
+        11012,
+        38910,
+        11268,
+        39162
+      ],
+      "methods": [
+        "harmony_island_tablet",
+        "harmony_island_teleport",
+        "harmony_island_poh_portal",
+        "harmony_island_poh_nexus"
       ]
     }
   ],
@@ -96,7 +205,12 @@
     {
       "id": "icy_basalt",
       "type": "item",
-      "destination": "weiss",
+      "place": "weiss",
+      "landing": [
+        7284,
+        34688,
+        48
+      ],
       "item": "Icy basalt",
       "option": "Teleport",
       "reqs": [
@@ -108,7 +222,12 @@
     {
       "id": "stony_basalt",
       "type": "item",
-      "destination": "stronghold",
+      "place": "stronghold",
+      "landing": [
+        7248,
+        35662,
+        48
+      ],
       "item": "Stony basalt",
       "option": "Teleport",
       "reqs": [
@@ -120,7 +239,12 @@
     {
       "id": "catherby_tablet",
       "type": "item",
-      "destination": "catherby",
+      "place": "catherby",
+      "landing": [
+        7130,
+        36612,
+        48
+      ],
       "item": "Catherby teleport",
       "option": "Break",
       "reqs": [
@@ -132,7 +256,12 @@
     {
       "id": "catherby_teleport",
       "type": "magic",
-      "destination": "catherby",
+      "place": "catherby",
+      "landing": [
+        7130,
+        36612,
+        48
+      ],
       "spell": "CATHERBY_TELEPORT",
       "option": "Teleport",
       "reqs": []
@@ -140,7 +269,12 @@
     {
       "id": "catherby_poh_portal",
       "type": "poh_portal",
-      "destination": "catherby",
+      "place": "catherby",
+      "landing": [
+        7130,
+        36612,
+        48
+      ],
       "reqs": [
         [
           "Construct. cape",
@@ -152,7 +286,12 @@
     {
       "id": "catherby_poh_nexus",
       "type": "poh_nexus",
-      "destination": "catherby",
+      "place": "catherby",
+      "landing": [
+        7130,
+        36612,
+        48
+      ],
       "reqs": [
         [
           "Construct. cape",
@@ -164,7 +303,12 @@
     {
       "id": "camelot_tablet",
       "type": "item",
-      "destination": "catherby",
+      "place": "catherby",
+      "landing": [
+        7130,
+        36612,
+        48
+      ],
       "item": "Camelot teleport",
       "option": "Break",
       "reqs": [
@@ -176,7 +320,12 @@
     {
       "id": "camelot_teleport",
       "type": "magic",
-      "destination": "catherby",
+      "place": "catherby",
+      "landing": [
+        7130,
+        36612,
+        48
+      ],
       "spell": "CAMELOT_TELEPORT",
       "option": "Teleport",
       "reqs": []
@@ -184,7 +333,12 @@
     {
       "id": "camelot_poh_portal",
       "type": "poh_portal",
-      "destination": "catherby",
+      "place": "catherby",
+      "landing": [
+        7130,
+        36612,
+        48
+      ],
       "reqs": [
         [
           "Construct. cape",
@@ -196,7 +350,12 @@
     {
       "id": "camelot_poh_nexus",
       "type": "poh_nexus",
-      "destination": "catherby",
+      "place": "catherby",
+      "landing": [
+        7130,
+        36612,
+        48
+      ],
       "reqs": [
         [
           "Construct. cape",
@@ -208,7 +367,12 @@
     {
       "id": "ardougne_farm_cloak",
       "type": "item",
-      "destination": "ardougne_farm",
+      "place": "ardougne_farm",
+      "landing": [
+        6568,
+        37092,
+        48
+      ],
       "item": "Ardougne cloak",
       "option": "Farm Teleport",
       "reqs": [
@@ -220,7 +384,12 @@
     {
       "id": "ardougne_monastery_cloak",
       "type": "item",
-      "destination": "ardougne_monastery",
+      "place": "ardougne_monastery",
+      "landing": [
+        6412,
+        37546,
+        48
+      ],
       "item": "Ardougne cloak",
       "option": "Monastery Teleport",
       "reqs": [
@@ -232,7 +401,12 @@
     {
       "id": "xeric_talisman_glade",
       "type": "item",
-      "destination": "hosidious",
+      "place": "hosidious",
+      "landing": [
+        2892,
+        36262,
+        48
+      ],
       "item": "Xeric's talisman",
       "option": "Xeric's Glade",
       "reqs": [
@@ -244,7 +418,12 @@
     {
       "id": "hosidious_tablet",
       "type": "item",
-      "destination": "hosidious",
+      "place": "hosidious",
+      "landing": [
+        2892,
+        36262,
+        48
+      ],
       "item": "Hosidius teleport",
       "option": "Break",
       "reqs": [
@@ -256,13 +435,23 @@
     {
       "id": "outside_poh",
       "type": "confirm",
-      "destination": "hosidious",
+      "place": "hosidious",
+      "landing": [
+        2892,
+        36262,
+        48
+      ],
       "reqs": []
     },
     {
       "id": "hosidious_construction_cape",
       "type": "item",
-      "destination": "hosidious",
+      "place": "hosidious",
+      "landing": [
+        2892,
+        36262,
+        48
+      ],
       "item": "Construct. cape",
       "option": "Tele to POH",
       "reqs": [
@@ -274,7 +463,12 @@
     {
       "id": "falador_farm_explorers_ring",
       "type": "item",
-      "destination": "falador_farm",
+      "place": "falador_farm",
+      "landing": [
+        8024,
+        37170,
+        48
+      ],
       "item": "Explorer's ring",
       "option": "Teleport",
       "reqs": [
@@ -286,7 +480,12 @@
     {
       "id": "draynor_glory",
       "type": "item",
-      "destination": "falador_farm",
+      "place": "falador_farm",
+      "landing": [
+        8024,
+        37170,
+        48
+      ],
       "item": "Amulet of glory",
       "option": "Draynor Village",
       "reqs": [
@@ -298,7 +497,12 @@
     {
       "id": "fenkenstrain_teleport",
       "type": "magic",
-      "destination": "phasmatys",
+      "place": "phasmatys",
+      "landing": [
+        10328,
+        36326,
+        48
+      ],
       "spell": "FENKENSTRAINS_CASTLE_TELEPORT",
       "option": "Teleport",
       "reqs": []
@@ -306,7 +510,12 @@
     {
       "id": "fenkenstrain_tablet",
       "type": "item",
-      "destination": "phasmatys",
+      "place": "phasmatys",
+      "landing": [
+        10328,
+        36326,
+        48
+      ],
       "item": "Fenkenstrain's castle teleport",
       "option": "Break",
       "reqs": [
@@ -318,7 +527,12 @@
     {
       "id": "fenkenstrain_poh_portal",
       "type": "poh_portal",
-      "destination": "phasmatys",
+      "place": "phasmatys",
+      "landing": [
+        10328,
+        36326,
+        48
+      ],
       "reqs": [
         [
           "Construct. cape",
@@ -330,7 +544,12 @@
     {
       "id": "fenkenstrain_poh_nexus",
       "type": "poh_nexus",
-      "destination": "phasmatys",
+      "place": "phasmatys",
+      "landing": [
+        10328,
+        36326,
+        48
+      ],
       "reqs": [
         [
           "Construct. cape",
@@ -342,7 +561,12 @@
     {
       "id": "ectophial",
       "type": "item",
-      "destination": "phasmatys",
+      "place": "phasmatys",
+      "landing": [
+        10328,
+        36326,
+        48
+      ],
       "item": "Ectophial",
       "option": "Empty",
       "reqs": [
@@ -354,7 +578,12 @@
     {
       "id": "farming_guild_farming_cape",
       "type": "item",
-      "destination": "farming_guild",
+      "place": "farming_guild",
+      "landing": [
+        970,
+        35460,
+        48
+      ],
       "item": "Farming cape",
       "option": "Teleport",
       "reqs": [
@@ -366,7 +595,12 @@
     {
       "id": "farming_guild_skills_necklace",
       "type": "item",
-      "destination": "farming_guild",
+      "place": "farming_guild",
+      "landing": [
+        970,
+        35460,
+        48
+      ],
       "item": "Skills necklace",
       "option": "Farming Guild",
       "reqs": [
@@ -378,7 +612,12 @@
     {
       "id": "farming_guild_poh_spirit_tree",
       "type": "poh_spirit_tree",
-      "destination": "farming_guild",
+      "place": "farming_guild",
+      "landing": [
+        970,
+        35460,
+        48
+      ],
       "reqs": [
         [
           "Construct. cape",
@@ -391,7 +630,12 @@
     {
       "id": "farming_guild_poh_fairy_ring",
       "type": "poh_fairy_ring",
-      "destination": "farming_guild",
+      "place": "farming_guild",
+      "landing": [
+        970,
+        35460,
+        48
+      ],
       "reqs": [
         [
           "Construct. cape",
@@ -408,7 +652,12 @@
     {
       "id": "harmony_island_teleport",
       "type": "magic",
-      "destination": "harmony_island",
+      "place": "harmony_island",
+      "landing": [
+        11140,
+        39036,
+        48
+      ],
       "spell": "HARMONY_ISLAND_TELEPORT",
       "option": "Teleport",
       "reqs": []
@@ -416,7 +665,12 @@
     {
       "id": "harmony_island_tablet",
       "type": "item",
-      "destination": "harmony_island",
+      "place": "harmony_island",
+      "landing": [
+        11140,
+        39036,
+        48
+      ],
       "item": "Harmony island teleport",
       "option": "Break",
       "reqs": [
@@ -428,7 +682,12 @@
     {
       "id": "harmony_island_poh_portal",
       "type": "poh_portal",
-      "destination": "harmony_island",
+      "place": "harmony_island",
+      "landing": [
+        11140,
+        39036,
+        48
+      ],
       "reqs": [
         [
           "Construct. cape",
@@ -440,7 +699,12 @@
     {
       "id": "harmony_island_poh_nexus",
       "type": "poh_nexus",
-      "destination": "harmony_island",
+      "place": "harmony_island",
+      "landing": [
+        11140,
+        39036,
+        48
+      ],
       "reqs": [
         [
           "Construct. cape",
@@ -453,296 +717,127 @@
   "patches": [
     {
       "id": "WEISS_HERB",
-      "destination": "weiss",
-      "methods": [
-        "icy_basalt"
-      ]
+      "place": "weiss"
     },
     {
       "id": "STRONGHOLD_HERB",
-      "destination": "stronghold",
-      "methods": [
-        "stony_basalt"
-      ]
+      "place": "stronghold"
     },
     {
       "id": "CATHERBY_HERB",
-      "destination": "catherby",
-      "methods": [
-        "catherby_tablet",
-        "catherby_teleport",
-        "camelot_tablet",
-        "camelot_teleport",
-        "catherby_poh_portal",
-        "catherby_poh_nexus"
-      ]
+      "place": "catherby"
     },
     {
       "id": "CATHERBY_FLOWER",
-      "destination": "catherby",
-      "methods": [
-        "catherby_tablet",
-        "catherby_teleport",
-        "camelot_tablet",
-        "camelot_teleport",
-        "catherby_poh_portal",
-        "catherby_poh_nexus"
-      ]
+      "place": "catherby"
     },
     {
       "id": "CATHERBY_ALLOT_N",
-      "destination": "catherby",
-      "methods": [
-        "catherby_tablet",
-        "catherby_teleport",
-        "camelot_tablet",
-        "camelot_teleport",
-        "catherby_poh_portal",
-        "catherby_poh_nexus"
-      ]
+      "place": "catherby"
     },
     {
       "id": "CATHERBY_ALLOT_S",
-      "destination": "catherby",
-      "methods": [
-        "catherby_tablet",
-        "catherby_teleport",
-        "camelot_tablet",
-        "camelot_teleport",
-        "catherby_poh_portal",
-        "catherby_poh_nexus"
-      ]
+      "place": "catherby"
     },
     {
       "id": "ARDOUGNE_HERB",
-      "destination": "ardougne_farm",
-      "methods": [
-        "ardougne_farm_cloak"
-      ]
+      "place": "ardougne_farm"
     },
     {
       "id": "ARDOUGNE_FLOWER",
-      "destination": "ardougne_farm",
-      "methods": [
-        "ardougne_farm_cloak"
-      ]
+      "place": "ardougne_farm"
     },
     {
       "id": "ARDOUGNE_ALLOT_N",
-      "destination": "ardougne_farm",
-      "methods": [
-        "ardougne_farm_cloak"
-      ]
+      "place": "ardougne_farm"
     },
     {
       "id": "ARDOUGNE_ALLOT_S",
-      "destination": "ardougne_farm",
-      "methods": [
-        "ardougne_farm_cloak"
-      ]
+      "place": "ardougne_farm"
     },
     {
       "id": "HOSIDIOUS_HERB",
-      "destination": "hosidious",
-      "methods": [
-        "xeric_talisman_glade",
-        "hosidious_tablet",
-        "outside_poh",
-        "hosidious_construction_cape"
-      ]
+      "place": "hosidious"
     },
     {
       "id": "HOSIDIOUS_FLOWER",
-      "destination": "hosidious",
-      "methods": [
-        "xeric_talisman_glade",
-        "hosidious_tablet",
-        "outside_poh",
-        "hosidious_construction_cape"
-      ]
+      "place": "hosidious"
     },
     {
       "id": "HOSIDIOUS_ALLOT_N",
-      "destination": "hosidious",
-      "methods": [
-        "xeric_talisman_glade",
-        "hosidious_tablet",
-        "outside_poh",
-        "hosidious_construction_cape"
-      ]
+      "place": "hosidious"
     },
     {
       "id": "HOSIDIOUS_ALLOT_S",
-      "destination": "hosidious",
-      "methods": [
-        "xeric_talisman_glade",
-        "hosidious_tablet",
-        "outside_poh",
-        "hosidious_construction_cape"
-      ]
+      "place": "hosidious"
     },
     {
       "id": "FALADOR_HERB",
-      "destination": "falador_farm",
-      "methods": [
-        "falador_farm_explorers_ring",
-        "draynor_glory"
-      ]
+      "place": "falador_farm"
     },
     {
       "id": "FALADOR_FLOWER",
-      "destination": "falador_farm",
-      "methods": [
-        "falador_farm_explorers_ring",
-        "draynor_glory"
-      ]
+      "place": "falador_farm"
     },
     {
       "id": "FALADOR_ALLOT_N",
-      "destination": "falador_farm",
-      "methods": [
-        "falador_farm_explorers_ring",
-        "draynor_glory"
-      ]
+      "place": "falador_farm"
     },
     {
       "id": "FALADOR_ALLOT_S",
-      "destination": "falador_farm",
-      "methods": [
-        "falador_farm_explorers_ring",
-        "draynor_glory"
-      ]
+      "place": "falador_farm"
     },
     {
       "id": "PHASMATYS_HERB",
-      "destination": "phasmatys",
-      "methods": [
-        "ectophial",
-        "fenkenstrain_tablet",
-        "fenkenstrain_teleport",
-        "fenkenstrain_poh_portal",
-        "fenkenstrain_poh_nexus"
-      ]
+      "place": "phasmatys"
     },
     {
       "id": "PHASMATYS_FLOWER",
-      "destination": "phasmatys",
-      "methods": [
-        "ectophial",
-        "fenkenstrain_tablet",
-        "fenkenstrain_teleport",
-        "fenkenstrain_poh_portal",
-        "fenkenstrain_poh_nexus"
-      ]
+      "place": "phasmatys"
     },
     {
       "id": "PHASMATYS_ALLOT_N",
-      "destination": "phasmatys",
-      "methods": [
-        "ectophial",
-        "fenkenstrain_tablet",
-        "fenkenstrain_teleport",
-        "fenkenstrain_poh_portal",
-        "fenkenstrain_poh_nexus"
-      ]
+      "place": "phasmatys"
     },
     {
       "id": "PHASMATYS_ALLOT_S",
-      "destination": "phasmatys",
-      "methods": [
-        "ectophial",
-        "fenkenstrain_tablet",
-        "fenkenstrain_teleport",
-        "fenkenstrain_poh_portal",
-        "fenkenstrain_poh_nexus"
-      ]
+      "place": "phasmatys"
     },
     {
       "id": "GUILD_HERB",
-      "destination": "farming_guild",
-      "methods": [
-        "farming_guild_skills_necklace",
-        "farming_guild_farming_cape",
-        "farming_guild_poh_spirit_tree",
-        "farming_guild_poh_fairy_ring"
-      ]
+      "place": "farming_guild"
     },
     {
       "id": "GUILD_FLOWER",
-      "destination": "farming_guild",
-      "methods": [
-        "farming_guild_skills_necklace",
-        "farming_guild_farming_cape",
-        "farming_guild_poh_spirit_tree",
-        "farming_guild_poh_fairy_ring"
-      ]
+      "place": "farming_guild"
     },
     {
       "id": "GUILD_ALLOT_N",
-      "destination": "farming_guild",
-      "methods": [
-        "farming_guild_skills_necklace",
-        "farming_guild_farming_cape",
-        "farming_guild_poh_spirit_tree",
-        "farming_guild_poh_fairy_ring"
-      ]
+      "place": "farming_guild"
     },
     {
       "id": "GUILD_ALLOT_S",
-      "destination": "farming_guild",
-      "methods": [
-        "farming_guild_skills_necklace",
-        "farming_guild_farming_cape",
-        "farming_guild_poh_spirit_tree",
-        "farming_guild_poh_fairy_ring"
-      ]
+      "place": "farming_guild"
     },
     {
       "id": "GUILD_BUSH",
-      "destination": "farming_guild",
-      "methods": [
-        "farming_guild_skills_necklace",
-        "farming_guild_farming_cape",
-        "farming_guild_poh_spirit_tree",
-        "farming_guild_poh_fairy_ring"
-      ]
+      "place": "farming_guild"
     },
     {
       "id": "GUILD_CACTUS",
-      "destination": "farming_guild",
-      "methods": [
-        "farming_guild_skills_necklace",
-        "farming_guild_farming_cape",
-        "farming_guild_poh_spirit_tree",
-        "farming_guild_poh_fairy_ring"
-      ]
+      "place": "farming_guild"
     },
     {
       "id": "HARMONY_ISLAND_HERB",
-      "destination": "harmony_island",
-      "methods": [
-        "harmony_island_tablet",
-        "harmony_island_teleport",
-        "harmony_island_poh_portal",
-        "harmony_island_poh_nexus"
-      ]
+      "place": "harmony_island"
     },
     {
       "id": "HARMONY_ISLAND_ALLOT",
-      "destination": "harmony_island",
-      "methods": [
-        "harmony_island_tablet",
-        "harmony_island_teleport",
-        "harmony_island_poh_portal",
-        "harmony_island_poh_nexus"
-      ]
+      "place": "harmony_island"
     },
     {
       "id": "MONESTARY_BUSH",
-      "destination": "ardougne_monastery",
-      "methods": [
-        "ardougne_monastery_cloak"
-      ]
+      "place": "ardougne_monastery"
     }
   ]
 }

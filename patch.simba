@@ -47,7 +47,7 @@ type
 
   TRSFarmPatch = record
     Descriptor: ERSFarmPatchDescriptor;
-    TravelMethod: String; // method id from data/travel.json; empty = try patch route list
+    TravelMethod: String; // method id from data/travel.json; empty = try place method list
     Seed: TRSItem;
     CompostMethod: ERSCompost;
     UseResurrectCrop: Boolean;
