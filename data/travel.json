@@ -1,0 +1,516 @@
+{
+  "version": 3,
+  "methods": [
+    {
+      "id": "icy_basalt",
+      "type": "item",
+      "chunk": "weiss",
+      "landing": [
+        7284,
+        34688,
+        48
+      ],
+      "reqs": [
+        [
+          "Icy basalt"
+        ]
+      ],
+      "item": "Icy basalt",
+      "option": "Teleport"
+    },
+    {
+      "id": "stony_basalt",
+      "type": "item",
+      "chunk": "stronghold",
+      "landing": [
+        7248,
+        35662,
+        48
+      ],
+      "reqs": [
+        [
+          "Stony basalt"
+        ]
+      ],
+      "item": "Stony basalt",
+      "option": "Teleport"
+    },
+    {
+      "id": "catherby_tablet",
+      "type": "item",
+      "chunk": "catherby",
+      "landing": [
+        7130,
+        36612,
+        48
+      ],
+      "reqs": [
+        [
+          "Catherby teleport"
+        ]
+      ],
+      "item": "Catherby teleport",
+      "option": "Break"
+    },
+    {
+      "id": "catherby_teleport",
+      "type": "magic",
+      "chunk": "catherby",
+      "landing": [
+        7130,
+        36612,
+        48
+      ],
+      "reqs": [],
+      "option": "Teleport",
+      "spell": "CATHERBY_TELEPORT"
+    },
+    {
+      "id": "catherby_poh_portal",
+      "type": "poh_portal",
+      "chunk": "catherby",
+      "landing": [
+        7130,
+        36612,
+        48
+      ],
+      "reqs": [
+        [
+          "Construct. cape",
+          "Teleport to house",
+          "Law rune"
+        ]
+      ]
+    },
+    {
+      "id": "catherby_poh_nexus",
+      "type": "poh_nexus",
+      "chunk": "catherby",
+      "landing": [
+        7130,
+        36612,
+        48
+      ],
+      "reqs": [
+        [
+          "Construct. cape",
+          "Teleport to house",
+          "Law rune"
+        ]
+      ]
+    },
+    {
+      "id": "camelot_tablet",
+      "type": "item",
+      "chunk": "catherby",
+      "landing": [
+        7130,
+        36612,
+        48
+      ],
+      "reqs": [
+        [
+          "Camelot teleport"
+        ]
+      ],
+      "item": "Camelot teleport",
+      "option": "Break"
+    },
+    {
+      "id": "camelot_teleport",
+      "type": "magic",
+      "chunk": "catherby",
+      "landing": [
+        7130,
+        36612,
+        48
+      ],
+      "reqs": [],
+      "option": "Teleport",
+      "spell": "CAMELOT_TELEPORT"
+    },
+    {
+      "id": "camelot_poh_portal",
+      "type": "poh_portal",
+      "chunk": "catherby",
+      "landing": [
+        7130,
+        36612,
+        48
+      ],
+      "reqs": [
+        [
+          "Construct. cape",
+          "Teleport to house",
+          "Law rune"
+        ]
+      ]
+    },
+    {
+      "id": "camelot_poh_nexus",
+      "type": "poh_nexus",
+      "chunk": "catherby",
+      "landing": [
+        7130,
+        36612,
+        48
+      ],
+      "reqs": [
+        [
+          "Construct. cape",
+          "Teleport to house",
+          "Law rune"
+        ]
+      ]
+    },
+    {
+      "id": "ardougne_farm_cloak",
+      "type": "item",
+      "chunk": "ardougne_farm",
+      "landing": [
+        6568,
+        37092,
+        48
+      ],
+      "reqs": [
+        [
+          "Ardougne cloak"
+        ]
+      ],
+      "item": "Ardougne cloak",
+      "option": "Farm Teleport"
+    },
+    {
+      "id": "ardougne_monastery_cloak",
+      "type": "item",
+      "chunk": "ardougne_monastery",
+      "landing": [
+        6412,
+        37546,
+        48
+      ],
+      "reqs": [
+        [
+          "Ardougne cloak"
+        ]
+      ],
+      "item": "Ardougne cloak",
+      "option": "Monastery Teleport"
+    },
+    {
+      "id": "xeric_talisman_glade",
+      "type": "item",
+      "chunk": "hosidious",
+      "landing": [
+        2892,
+        36262,
+        48
+      ],
+      "reqs": [
+        [
+          "Xeric's talisman"
+        ]
+      ],
+      "item": "Xeric's talisman",
+      "option": "Xeric's Glade"
+    },
+    {
+      "id": "hosidious_tablet",
+      "type": "item",
+      "chunk": "hosidious",
+      "landing": [
+        2892,
+        36262,
+        48
+      ],
+      "reqs": [
+        [
+          "Hosidius teleport"
+        ]
+      ],
+      "item": "Hosidius teleport",
+      "option": "Break"
+    },
+    {
+      "id": "outside_poh",
+      "type": "confirm",
+      "chunk": "hosidious",
+      "landing": [
+        2892,
+        36262,
+        48
+      ],
+      "reqs": []
+    },
+    {
+      "id": "hosidious_construction_cape",
+      "type": "item",
+      "chunk": "hosidious",
+      "landing": [
+        2892,
+        36262,
+        48
+      ],
+      "reqs": [
+        [
+          "Construct. cape"
+        ]
+      ],
+      "item": "Construct. cape",
+      "option": "Tele to POH"
+    },
+    {
+      "id": "falador_farm_explorers_ring",
+      "type": "item",
+      "chunk": "falador_farm",
+      "landing": [
+        8024,
+        37170,
+        48
+      ],
+      "reqs": [
+        [
+          "Explorer's ring"
+        ]
+      ],
+      "item": "Explorer's ring",
+      "option": "Teleport"
+    },
+    {
+      "id": "draynor_glory",
+      "type": "item",
+      "chunk": "falador_farm",
+      "landing": [
+        8024,
+        37170,
+        48
+      ],
+      "reqs": [
+        [
+          "Amulet of glory"
+        ]
+      ],
+      "item": "Amulet of glory",
+      "option": "Draynor Village"
+    },
+    {
+      "id": "fenkenstrain_teleport",
+      "type": "magic",
+      "chunk": "phasmatys",
+      "landing": [
+        10328,
+        36326,
+        48
+      ],
+      "reqs": [],
+      "option": "Teleport",
+      "spell": "FENKENSTRAINS_CASTLE_TELEPORT"
+    },
+    {
+      "id": "fenkenstrain_tablet",
+      "type": "item",
+      "chunk": "phasmatys",
+      "landing": [
+        10328,
+        36326,
+        48
+      ],
+      "reqs": [
+        [
+          "Fenkenstrain's castle teleport"
+        ]
+      ],
+      "item": "Fenkenstrain's castle teleport",
+      "option": "Break"
+    },
+    {
+      "id": "fenkenstrain_poh_portal",
+      "type": "poh_portal",
+      "chunk": "phasmatys",
+      "landing": [
+        10328,
+        36326,
+        48
+      ],
+      "reqs": [
+        [
+          "Construct. cape",
+          "Teleport to house",
+          "Law rune"
+        ]
+      ]
+    },
+    {
+      "id": "fenkenstrain_poh_nexus",
+      "type": "poh_nexus",
+      "chunk": "phasmatys",
+      "landing": [
+        10328,
+        36326,
+        48
+      ],
+      "reqs": [
+        [
+          "Construct. cape",
+          "Teleport to house",
+          "Law rune"
+        ]
+      ]
+    },
+    {
+      "id": "ectophial",
+      "type": "item",
+      "chunk": "phasmatys",
+      "landing": [
+        10328,
+        36326,
+        48
+      ],
+      "reqs": [
+        [
+          "Ectophial"
+        ]
+      ],
+      "item": "Ectophial",
+      "option": "Empty"
+    },
+    {
+      "id": "farming_guild_farming_cape",
+      "type": "item",
+      "chunk": "farming_guild",
+      "landing": [
+        970,
+        35460,
+        48
+      ],
+      "reqs": [
+        [
+          "Farming cape"
+        ]
+      ],
+      "item": "Farming cape",
+      "option": "Teleport"
+    },
+    {
+      "id": "farming_guild_skills_necklace",
+      "type": "item",
+      "chunk": "farming_guild",
+      "landing": [
+        970,
+        35460,
+        48
+      ],
+      "reqs": [
+        [
+          "Skills necklace"
+        ]
+      ],
+      "item": "Skills necklace",
+      "option": "Farming Guild"
+    },
+    {
+      "id": "farming_guild_poh_spirit_tree",
+      "type": "poh_spirit_tree",
+      "chunk": "farming_guild",
+      "landing": [
+        970,
+        35460,
+        48
+      ],
+      "reqs": [
+        [
+          "Construct. cape",
+          "Teleport to house",
+          "Law rune"
+        ]
+      ],
+      "option": "Farming Guild"
+    },
+    {
+      "id": "farming_guild_poh_fairy_ring",
+      "type": "poh_fairy_ring",
+      "chunk": "farming_guild",
+      "landing": [
+        970,
+        35460,
+        48
+      ],
+      "reqs": [
+        [
+          "Construct. cape",
+          "Teleport to house",
+          "Law rune"
+        ],
+        [
+          "Dramen staff",
+          "Lunar staff"
+        ]
+      ],
+      "option": "Farming Guild"
+    },
+    {
+      "id": "harmony_island_teleport",
+      "type": "magic",
+      "chunk": "harmony_island",
+      "landing": [
+        11140,
+        39036,
+        48
+      ],
+      "reqs": [],
+      "option": "Teleport",
+      "spell": "HARMONY_ISLAND_TELEPORT"
+    },
+    {
+      "id": "harmony_island_tablet",
+      "type": "item",
+      "chunk": "harmony_island",
+      "landing": [
+        11140,
+        39036,
+        48
+      ],
+      "reqs": [
+        [
+          "Harmony island teleport"
+        ]
+      ],
+      "item": "Harmony island teleport",
+      "option": "Break"
+    },
+    {
+      "id": "harmony_island_poh_portal",
+      "type": "poh_portal",
+      "chunk": "harmony_island",
+      "landing": [
+        11140,
+        39036,
+        48
+      ],
+      "reqs": [
+        [
+          "Construct. cape",
+          "Teleport to house",
+          "Law rune"
+        ]
+      ]
+    },
+    {
+      "id": "harmony_island_poh_nexus",
+      "type": "poh_nexus",
+      "chunk": "harmony_island",
+      "landing": [
+        11140,
+        39036,
+        48
+      ],
+      "reqs": [
+        [
+          "Construct. cape",
+          "Teleport to house",
+          "Law rune"
+        ]
+      ]
+    }
+  ]
+}
