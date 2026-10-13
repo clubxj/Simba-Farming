@@ -201,17 +201,6 @@ begin
   raise Format('Unknown travel method "%s"', [methodId]);
 end;
 
-function TRSFarmingTravel.FindPatch(patchId: String): TRSFarmTravelPatch;
-var
-  patch: TRSFarmTravelPatch;
-begin
-  for patch in Self.Patches do
-    if patch.PatchId = patchId then
-      Exit(patch);
-
-  raise Format('No travel place configured for patch "%s"', [patchId]);
-end;
-
 function TRSFarmingTravel.SpellFromName(spellName: String): ERSSpell;
 var
   spell: ERSSpell;
