@@ -47,7 +47,7 @@ type
 
   TRSFarmPatch = record
     Descriptor: ERSFarmPatchDescriptor;
-    TravelMethod: String; // method id from data/travel.json; empty = try place method list
+    TravelMethod: String; // transport method id from data/travel.json (set by farm run)
     Seed: TRSItem;
     CompostMethod: ERSCompost;
     UseResurrectCrop: Boolean;
@@ -680,16 +680,15 @@ var
   state: ERSFarmPatchState;
   action: ERSFarmPatchAction;
 begin
-  if Self.TravelMethod <> '' then
+  if Self.TravelMethod = '' then
   begin
-    if not FarmingTravel.Travel(Self.TravelMethod) then
-    begin
-      Self.DebugLn('Failed to travel via method %s for patch %s. Skipping it', [Self.TravelMethod, Self.Descriptor.ToString()]);
-      Exit;
-    end;
-  end else if not FarmingTravel.TravelToPatch(Self.Descriptor.ToString()) then
+    Self.DebugLn('No travel method set for patch %s. Skipping it', [Self.Descriptor.ToString()]);
+    Exit;
+  end;
+
+  if not FarmingTravel.Travel(Self.TravelMethod) then
   begin
-    Self.DebugLn('Failed to travel to farming patch %s. Skipping it', [Self.Descriptor.ToString()]);
+    Self.DebugLn('Failed to travel via %s for patch %s. Skipping it', [Self.TravelMethod, Self.Descriptor.ToString()]);
     Exit;
   end;
 

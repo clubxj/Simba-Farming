@@ -4,52 +4,30 @@ AIO farming script / plugin for Simba + WaspLib (OSRS).
 
 ## Patch transport
 
-Travel is data-driven from `data/travel.json` (version 2). Transport only gets you **within walking distance** of a farm place; `WalkFind` + the walker take over after that.
+Internal to the farm run handler. Data in `data/travel.json` (version 2). Transport only gets you **within walking distance** of a farm place; `WalkFind` + the walker take over after that.
 
 ```text
 places[]    farm chunk areas: map (Map.AddEx), local (skip-tele), default methods
-methods[]   how to teleport: type, place, landing [x,y,radius], fields, reqs
-patches[]   patch id → place (GUI association + TravelToPatch)
+methods[]   transport options: type, place, landing [x,y,radius], fields, reqs
+patches[]   patch id → place (for future GUI config)
 ```
 
-### Runtime flow
-
-```text
-TravelToPatch(patch)
-  load place map chunks
-  if already in place.local → done (e.g. Catherby allot N → allot S)
-  else try place methods (or preferred) until landing confirms
-→ WalkFind / walker / handle patch
-```
-
-### Usage
+Farm run chooses the transport method per patch, then:
 
 ```pascal
 FarmingTravel.Init();
-FarmingTravel.Travel('xeric_talisman_glade');
-FarmingTravel.TravelToPatch('HOSIDIOUS_ALLOT_N');
-FarmingTravel.TravelToPatch('HOSIDIOUS_ALLOT_N', 'hosidious_tablet');
-
-// GUI helpers
-FarmingTravel.MethodsForPatch('CATHERBY_ALLOT_N');
-FarmingTravel.PatchesForPlace('catherby');
+FarmingTravel.Travel(patch.TravelMethod); // one entry point
+// → WalkFind / walker / handle patch
 ```
 
-`TRSFarmPatch.TravelMethod` is a method id string. Leave it empty to try the place’s method list.
-
-### Landing vs local
-
-| Field | Meaning |
-|---|---|
-| `places[].map` | Chunk load (`Map.AddEx` on expanded box) |
-| `places[].local` | Already at farm → skip teleport |
-| `methods[].landing` | `[x, y, radius]` — teleport success confirm (jitter) |
-
-Transport does **not** walk from landing to the patch.
+`Travel`:
+1. Load place map chunks  
+2. If already in `place.local` → skip teleport (e.g. Catherby allot N → S)  
+3. Else run the method and confirm `landing [x,y,radius]`  
 
 ### Item reqs
 
-AND of OR-groups on each method (for a future setup GUI). Runtime ignores them.
+AND of OR-groups on each method (future setup GUI). Runtime ignores them.
 
 ```json
 "reqs": [
@@ -58,11 +36,11 @@ AND of OR-groups on each method (for a future setup GUI). Runtime ignores them.
 ]
 ```
 
-### Adding a travel option
+### Adding a transport option
 
-1. Ensure the place exists (`map` / `local` / default `methods`).
+1. Ensure the place exists (`map` / `local` / `methods`).
 2. Add a method with `place`, `landing`, type fields, optional `reqs`.
 3. Append the method id to `places[].methods`.
-4. Patches only need `{ "id", "place" }` — methods are inherited from the place.
+4. Patches only need `{ "id", "place" }`.
 
-POH handlers are stubbed until implemented. Landing centers in JSON are placeholders (map-box centers, radius 48) and should be calibrated in-game.
+POH handlers are stubbed. Landing centers are placeholders (map-box centers, radius 48) until calibrated in-game.

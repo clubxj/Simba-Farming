@@ -42,7 +42,7 @@ type
     Reqs: TRSFarmTravelReqs;
   end;
 
-  // Patch → place for GUI association and TravelToPatch. Methods come from the place.
+  // Patch → place for future GUI config. Farm run picks the method; Travel only takes a method id.
   TRSFarmTravelPatch = record
     PatchId: String;
     PlaceId: String;
@@ -212,25 +212,6 @@ begin
   raise Format('No travel place configured for patch "%s"', [patchId]);
 end;
 
-function TRSFarmingTravel.MethodsForPlace(placeId: String): TStringArray;
-begin
-  Result := Self.FindPlace(placeId).MethodIds;
-end;
-
-function TRSFarmingTravel.MethodsForPatch(patchId: String): TStringArray;
-begin
-  Result := Self.MethodsForPlace(Self.FindPatch(patchId).PlaceId);
-end;
-
-function TRSFarmingTravel.PatchesForPlace(placeId: String): TStringArray;
-var
-  patch: TRSFarmTravelPatch;
-begin
-  for patch in Self.Patches do
-    if patch.PlaceId = placeId then
-      Result += patch.PatchId;
-end;
-
 function TRSFarmingTravel.SpellFromName(spellName: String): ERSSpell;
 var
   spell: ERSSpell;
@@ -388,7 +369,9 @@ begin
   end;
 end;
 
-// Get within walking distance of a place via one method. Does not walk to the patch.
+// Called by the farm run handler with the chosen transport method id.
+// Loads chunks, skips teleport when already in place.local, otherwise teleports and
+// confirms landing. Does not walk to the patch — WalkFind owns that.
 function TRSFarmingTravel.Travel(methodId: String; attempts: Integer = 2): Boolean;
 var
   method: TRSFarmTravelMethod;
@@ -418,40 +401,6 @@ begin
   ]));
 
   Result := Self.ExecuteMethod(method, attempts);
-end;
-
-// Get within walking distance of the patch's place. WalkFind owns pathing after this.
-function TRSFarmingTravel.TravelToPatch(patchId: String; preferredMethod: String = ''; attempts: Integer = 2): Boolean;
-var
-  patch: TRSFarmTravelPatch;
-  place: TRSFarmTravelPlace;
-  methodId: String;
-begin
-  if not Self.Loaded then
-    raise 'FarmingTravel.Init() must be called before TravelToPatch()';
-
-  patch := Self.FindPatch(patchId);
-  place := Self.FindPlace(patch.PlaceId);
-  Self.LoadMap(place.Id);
-
-  if Self.AlreadyLocal(place.Id) then
-  begin
-    WriteLn(Format('%s:[FarmingTravel]: already local place=%s for patch=%s (skip teleport)', [
-      GetTimeStamp(), place.Id, patchId
-    ]));
-    Exit(True);
-  end;
-
-  if preferredMethod <> '' then
-  begin
-    if not place.MethodIds.Contains(preferredMethod) then
-      raise Format('Method "%s" is not allowed for place "%s" (patch %s)', [preferredMethod, place.Id, patchId]);
-    Exit(Self.Travel(preferredMethod, attempts));
-  end;
-
-  for methodId in place.MethodIds do
-    if Self.Travel(methodId, attempts) then
-      Exit(True);
 end;
 
 procedure TRSFarmingTravel.ParsePlaces(root: TJSONItem);
@@ -587,28 +536,4 @@ end;
 procedure TRSFarmingTravel.Init(path: String = '');
 begin
   Self.Load(path);
-end;
-
-function TRSFarmingTravel.MethodIds(): TStringArray;
-var
-  method: TRSFarmTravelMethod;
-begin
-  for method in Self.Methods do
-    Result += method.Id;
-end;
-
-function TRSFarmingTravel.PlaceIds(): TStringArray;
-var
-  place: TRSFarmTravelPlace;
-begin
-  for place in Self.Places do
-    Result += place.Id;
-end;
-
-function TRSFarmingTravel.PatchIds(): TStringArray;
-var
-  patch: TRSFarmTravelPatch;
-begin
-  for patch in Self.Patches do
-    Result += patch.PatchId;
 end;
