@@ -202,33 +202,30 @@ begin
   Result := destination.MapArea.Contains(Map.Position);
 end;
 
-function TRSFarmingTravel.ItemTeleport(method: TRSFarmTravelMethod; attempts: Integer): Boolean;
+function TRSFarmingTravel.TryItemOnInterface(method: TRSFarmTravelMethod; items: TRSItemInterface; slots: TRSSlotInterface; attempts: Integer): Boolean;
 var
-  itemInterface: TRSItemInterface;
-  slotInterface: TRSSlotInterface;
   attempt, slot: Integer;
-
-  function TryUse(items: TRSItemInterface; slots: TRSSlotInterface): Boolean;
-  begin
-    for attempt := 1 to attempts do
-      if items.Find(method.Item, slot) then
+begin
+  for attempt := 1 to attempts do
+    if items.Find(method.Item, slot) then
+    begin
+      slots.Hover(slot);
+      Sleep(75);
+      if MainScreen.IsUpText(method.Option) then
       begin
-        slots.Hover(slot);
-        Sleep(75);
-        if MainScreen.IsUpText(method.Option) then
-        begin
-          Mouse.Click(EMouseButton.LEFT);
-          Exit(Self.Confirm(method.DestinationId));
-        end else if ChooseOption.Open then
-        begin
-          if ChooseOption.Find([method.Option], False, False) then
-            Exit(ChooseOption.Select(method.Option, False, True) and Self.Confirm(method.DestinationId))
-          else if ChooseOption.OpenSubmenu(True) then
-            Exit(ChooseOption.SelectSubmenuOption([method.Option], False, True) and Self.Confirm(method.DestinationId));
-        end;
+        Mouse.Click(EMouseButton.LEFT);
+        Exit(Self.Confirm(method.DestinationId));
+      end else if ChooseOption.Open then
+      begin
+        if ChooseOption.Find([method.Option], False, False) then
+          Exit(ChooseOption.Select(method.Option, False, True) and Self.Confirm(method.DestinationId))
+        else if ChooseOption.OpenSubmenu(True) then
+          Exit(ChooseOption.SelectSubmenuOption([method.Option], False, True) and Self.Confirm(method.DestinationId));
       end;
-  end;
+    end;
+end;
 
+function TRSFarmingTravel.ItemTeleport(method: TRSFarmTravelMethod; attempts: Integer): Boolean;
 begin
   Self.LoadMap(method.DestinationId);
   if Self.AlreadyThere(method.DestinationId) then
@@ -236,28 +233,28 @@ begin
 
   if Inventory.IsOpen then
   begin
-    if TryUse(Inventory.Items, Inventory.Slots) then
+    if Self.TryItemOnInterface(method, Inventory.Items, Inventory.Slots, attempts) then
       Exit(True);
   end else if Equipment.IsOpen then
   begin
-    if TryUse(Equipment.Items, Equipment.Slots) then
+    if Self.TryItemOnInterface(method, Equipment.Items, Equipment.Slots, attempts) then
       Exit(True);
   end else if Inventory.Open then
   begin
-    if TryUse(Inventory.Items, Inventory.Slots) then
+    if Self.TryItemOnInterface(method, Inventory.Items, Inventory.Slots, attempts) then
       Exit(True);
   end else if Equipment.Open then
   begin
-    if TryUse(Equipment.Items, Equipment.Slots) then
+    if Self.TryItemOnInterface(method, Equipment.Items, Equipment.Slots, attempts) then
       Exit(True);
   end else
     Exit;
 
   if Inventory.IsOpen and Equipment.Open then
-    Exit(TryUse(Equipment.Items, Equipment.Slots));
+    Exit(Self.TryItemOnInterface(method, Equipment.Items, Equipment.Slots, attempts));
 
   if Equipment.IsOpen and Inventory.Open then
-    Exit(TryUse(Inventory.Items, Inventory.Slots));
+    Exit(Self.TryItemOnInterface(method, Inventory.Items, Inventory.Slots, attempts));
 end;
 
 function TRSFarmingTravel.MagicTeleport(method: TRSFarmTravelMethod; attempts: Integer): Boolean;
