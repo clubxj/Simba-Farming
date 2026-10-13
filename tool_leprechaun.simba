@@ -32,12 +32,12 @@ type
     const NOTABLE_ITEMS: TRSItemArray = [
       'Guam leaf', 'Marrentill', 'Tarromin', 'Harralander', 'Ranarr weed', 'Toadflax',
       'Irit leaf', 'Avantoe', 'Kwuarm', 'Snapdragon', 'Cadantine', 'Lantadyme', 'Dwarf weed',
-      'Tortstol',
+      'Torstol',
 
       'Grimy guam leaf', 'Grimy marrentill', 'Grimy tarromin', 'Grimy harralander',
       'Grimy ranarr weed', 'Grimy toadflax', 'Grimy irit leaf', 'Grimy avantoe',
       'Grimy kwuarm', 'Grimy snapdragon', 'Grimy cadantine', 'Grimy lantadyme',
-      'Grimy dwarf weed', 'Grimy torstol'
+      'Grimy dwarf weed', 'Grimy torstol',
 
       'Limpwurt root',
 
@@ -142,10 +142,9 @@ end;
 
 function TRSToolLeprechaun.Deposit(tool: ERSToolLeprechaunItem; amount: Integer): Boolean;
 var
-  count: Integer;
   storeAmount: Integer;
 begin
-  if not Self.Count(ERSToolLeprechaunInterface.INVENTORY, tool) = 0 then
+  if Self.Count(ERSToolLeprechaunInterface.INVENTORY, tool) = 0 then
     Exit;
 
   Mouse.Move(Self.Buttons[ERSToolLeprechaunInterface.INVENTORY][tool].Bounds, True);
@@ -174,16 +173,15 @@ end;
 
 function TRSToolLeprechaun.Withdraw(tool: ERSToolLeprechaunItem; amount: Integer): Boolean;
 var
-  count: Integer;
   storeAmount: Integer;
 begin
-  if not Self.Count(ERSToolLeprechaunInterface.INVENTORY, tool) = 0 then
+  if Self.Count(ERSToolLeprechaunInterface.STORAGE, tool) = 0 then
     Exit;
 
-  Mouse.Move(Self.Buttons[ERSToolLeprechaunInterface.INVENTORY][tool].Bounds, True);
+  Mouse.Move(Self.Buttons[ERSToolLeprechaunInterface.STORAGE][tool].Bounds, True);
   Sleep(50, 100);
 
-  if (tool = ERSToolLeprechaunItem.WATERING_CAN) or ((amount = -1) and MainScreen.IsUpText('Store-All')) then
+  if (tool = ERSToolLeprechaunItem.WATERING_CAN) or ((amount = -1) and MainScreen.IsUpText('Remove-All')) then
   begin
     Mouse.Click(EMouseButton.LEFT);
     Exit(True);
@@ -206,10 +204,10 @@ end;
 
 function TRSToolLeprechaun.WithdrawNotes(tool: ERSToolLeprechaunItem): Boolean;
 begin
-  if not Self.Count(ERSToolLeprechaunInterface.INVENTORY, tool) = 0 then
+  if Self.Count(ERSToolLeprechaunInterface.STORAGE, tool) = 0 then
     Exit;
 
-  Mouse.Move(Self.Buttons[ERSToolLeprechaunInterface.INVENTORY][tool].Bounds, True);
+  Mouse.Move(Self.Buttons[ERSToolLeprechaunInterface.STORAGE][tool].Bounds, True);
   Sleep(50, 100);
   Result := ChooseOption.Select('Banknotes');
 end;
@@ -293,10 +291,11 @@ begin
   Result := Self.NoteItems(TRSToolLeprechaun.NOTABLE_ITEMS);
 end;
 
+{$IFDEF FARM_LEPRECHAUN_MAIN}
 begin
   Map.Setup([ERSChunk.CATHERBY, ERSChunk.ARDOUGNE, ERSChunk.AL_KHARID]);
   NPCsJSON.Load([Map.Region]);
-  writeln NPCsJSON.Get('Tool leprechaun').AsString;
- // writeln ToolLeprechaun.NPC().Coordinates;
+  WriteLn(NPCsJSON.Get('Tool leprechaun').AsString);
 end.
+{$ENDIF}
 

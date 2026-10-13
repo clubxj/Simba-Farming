@@ -50,6 +50,6 @@ end;
 
 function ERSCompost.ToString(): String;
 begin
-  Result := ToStr(Self).After('ERSCompost').ToLower().Capitalize().Replace('_', ' ');
+  Result := ToStr(Self).After('ERSCompost.').ToLower().Capitalize().Replace('_', ' ');
 end;
 

@@ -48,9 +48,9 @@ type
   TRSFarmingTravelHelper = record
     const WEISS_MAP:              TBox = [ 7256, 34654,  7312, 34722];
     const STRONGHOLD_MAP:         TBox = [ 7180, 35618,  7316, 35706];
-    const CAHTERBY_MAP:           TBox = [ 6896, 36494,  7364, 36730];
+    const CATHERBY_MAP:           TBox = [ 6896, 36494,  7364, 36730];
     const ARDOUGNE_FARM_MAP:      TBox = [ 6440, 36886,  6696, 37298];
-    const ARDOUGNE_MONESTARY_MAP: TBox = [ 6268, 37478,  6556, 37614];
+    const ARDOUGNE_MONASTERY_MAP: TBox = [ 6268, 37478,  6556, 37614];
     const HOSIDIOUS_MAP:          TBox = [ 2816, 36138,  2968, 36386];
     const FALADOR_FARM_MAP:       TBox = [ 7728, 36866,  8320, 37474];
     const PHASMATYS_FARM_MAP:     TBox = [10072, 36262, 10584, 36390];
@@ -109,7 +109,6 @@ end;
 procedure TRSFarmingTravelHelper._LoadMap(mapArea: TBox);
 begin
   Map.AddEx([RSTranslator.Global2Chunk(mapArea.Expand(80))], [0]);
-  TRSMapChunk
 end;
 
 function TRSFarmingTravelHelper._ConfirmTravel(mapArea: TBox): Boolean;
@@ -241,28 +240,28 @@ function TRSFarmingTravelHelper._CATHERBY_TABLET(attempts: Integer): Boolean;
 const
   CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
 begin
-  Result := Self._ItemTeleport('Catherby teleport', 'Teleport', TRSFarmingTravelHelper.CAHTERBY_MAP, attempts);
+  Result := Self._ItemTeleport('Catherby teleport', 'Teleport', TRSFarmingTravelHelper.CATHERBY_MAP, attempts);
 end;
 
 function TRSFarmingTravelHelper._CATHERBY_TELEPORT(attempts: Integer): Boolean;
 const
   CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
 begin
-  Result := Self._MagicTeleport(ERSSpell.CATHERBY_TELEPORT, 'Teleport', TRSFarmingTravelHelper.CAHTERBY_MAP, attempts);
+  Result := Self._MagicTeleport(ERSSpell.CATHERBY_TELEPORT, 'Teleport', TRSFarmingTravelHelper.CATHERBY_MAP, attempts);
 end;
 
 function TRSFarmingTravelHelper._CAMELOT_TABLET(attempts: Integer): Boolean;
 const
   CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
 begin
-  Result := Self._ItemTeleport('Camelot teleport', 'Teleport', TRSFarmingTravelHelper.CAHTERBY_MAP, attempts);
+  Result := Self._ItemTeleport('Camelot teleport', 'Teleport', TRSFarmingTravelHelper.CATHERBY_MAP, attempts);
 end;
 
 function TRSFarmingTravelHelper._CAMELOT_TELEPORT(attempts: Integer): Boolean;
 const
   CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
 begin
-  Result := Self._MagicTeleport(ERSSpell.CAMELOT_TELEPORT, 'Teleport', TRSFarmingTravelHelper.CAHTERBY_MAP, attempts);
+  Result := Self._MagicTeleport(ERSSpell.CAMELOT_TELEPORT, 'Teleport', TRSFarmingTravelHelper.CATHERBY_MAP, attempts);
 end;
 
 function TRSFarmingTravelHelper._CATHERBY_POH_PORTAL(attempts: Integer): Boolean;
@@ -296,7 +295,7 @@ function TRSFarmingTravelHelper._ARDOUGNE_MONESTARY_CLOAK(attempts: Integer): Bo
 const
   CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
 begin
-  Result := Self._ItemTeleport('Ardougne Monestary Cloak', 'Teleport', TRSFarmingTravelHelper.ARDOUGNE_MONESTARY_MAP, attempts);
+  Result := Self._ItemTeleport('Ardougne Monastery Cloak', 'Teleport', TRSFarmingTravelHelper.ARDOUGNE_MONASTERY_MAP, attempts);
 end;
 
 function TRSFarmingTravelHelper._HOSIDIOUS_TABLET(attempts: Integer): Boolean;
@@ -307,10 +306,10 @@ begin
 end;
 
 function TRSFarmingTravelHelper._OUTSIDE_POH(attempts: Integer): Boolean;
-const
-  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
 begin
-  Result := Self._ItemTeleport('Hosidious Tablet', 'Teleport', TRSFarmingTravelHelper.HOSIDIOUS_MAP, attempts);
+  // Outside-POH arrival is context-specific; treat as "already in / load Hosidius map".
+  Self._LoadMap(TRSFarmingTravelHelper.HOSIDIOUS_MAP);
+  Result := Self._ConfirmTravel(TRSFarmingTravelHelper.HOSIDIOUS_MAP);
 end;
 
 function TRSFarmingTravelHelper._HOSIDIOUS_CONSTRUCTION_CAPE(attempts: Integer): Boolean;
@@ -385,10 +384,9 @@ begin
 end;
 
 function TRSFarmingTravelHelper._FARMING_GUILD_POH_SPIRIT_TREE(attempts: Integer): Boolean;
-const
-  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
 begin
-  Result := Self._ItemTeleport('Farming Guild Skills Necklace', 'Teleport', TRSFarmingTravelHelper.FARMING_GUILD_MAP, attempts);
+  Result := False;
+  raise 'Farming guild POH spirit tree travel is not yet implemented';
 end;
 
 function TRSFarmingTravelHelper._HARMONY_ISLAND_TELEPORT(attempts: Integer): Boolean;

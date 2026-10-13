@@ -101,11 +101,11 @@ var
 begin
   img := Target.GetImage();
   img.DrawColor := $ff;
-  img.DrawBox(findResults.ClickBox);
+  img.DrawBox(Self.ClickBox);
   img.DrawColor := $ff00;
-  img.DrawBox(findResults.SearchBox);
+  img.DrawBox(Self.SearchBox);
   img.DrawColor := $ff0000;
-  img.DrawQuad(findResults.PatchQuad);
+  img.DrawQuad(Self.PatchQuad);
   img.Show();
 end;
 
@@ -176,8 +176,9 @@ begin
                                    tiles[2].Corners,
                                    tiles[3].Corners]).Merge().MinAreaRect();
 
-  //DEBUG
+  {$IFDEF FARM_DEBUG_PATCH_FIND}
   Result.ShowOnMainScreen();
+  {$ENDIF}
 end;
 
 function TRSFarmPatch.WalkFind(attempts: Integer = 2): TRSFarmPatchFindResults;
@@ -337,6 +338,8 @@ begin
   text := MainScreen.UpText;
   Self.DebugLn('Looking for patch state; hovering patch. uptext=%s', [text]);
 
+  if UpText(['Rake']) then
+    Exit(ERSFarmPatchState.WEEDED);
   if UpText([TRSFarmPatchData.GetEmptyUptext(Self.Descriptor)]) then
     Exit(ERSFarmPatchState.EMPTY);
   if UpText(['Pick', 'Harvest']) then
@@ -361,7 +364,7 @@ begin
     begin
       if Magic.IsSelected(ERSSpell.FERTILE_SOIL) then
         Exit(ERSFarmPatchAction.COMPOST);
-      if Magic.IsSelected(ERSSpell.CURE_ME) then
+      if Magic.IsSelected(ERSSpell.CURE_PLANT) then
         Exit(ERSFarmPatchAction.CAST_CURE_PLANT);
       if Magic.IsSelected(ERSSpell.RESURRECT_CROPS) then
         Exit(ERSFarmPatchAction.CAST_RESURRECT_CROP);
@@ -376,7 +379,7 @@ begin
     if Inventory.IsFull then
       Exit(ERSFarmPatchAction.NOTE_ITEMS);
     if (selected := Inventory.GetSelected()) >= 0 then
-      case Inventory.GetSelected of
+      case selected of
         Self.CompostSlot: Exit(ERSFarmPatchAction.COMPOST);
         Self.SeedSlot   : Exit(ERSFarmPatchAction.PLANT);
       end;
@@ -386,7 +389,18 @@ begin
     ERSFarmPatchState.WEEDED:               Exit(ERSFarmPatchAction.RAKE);
     ERSFarmPatchState.GROWN_CHECK_HEALTH:   Exit(ERSFarmPatchAction.CHECK_HEALTH);
     ERSFarmPatchState.GROWN_HARVEST_READY:  Exit(ERSFarmPatchAction.HARVEST);
-    ERSFarmPatchState.EMPTY:                Exit(ERSFarmPatchAction.PLANT);
+    ERSFarmPatchState.EMPTY:
+      begin
+        if (not Self.Composted) and (Self.CompostMethod <> ERSCompost.NONE) then
+        begin
+          if Self.CompostMethod = ERSCompost.FERTILE_SOIL then
+            Exit(ERSFarmPatchAction.CAST_FERTILE_SOIL);
+          if Self.HasCompost() then
+            Exit(ERSFarmPatchAction.COMPOST);
+          Exit(ERSFarmPatchAction.WITHDRAW_COMPOST);
+        end;
+        Exit(ERSFarmPatchAction.PLANT);
+      end;
   end;
 
   if state = ERSFarmPatchState.DEAD then
@@ -412,8 +426,49 @@ begin
 end;
 
 function TRSFarmPatch.CheckHealth(): Boolean;
+var
+  inactivity: TCountDown;
 begin
+  if not Self.WalkInteract(['Check-health']) then
+    Exit;
 
+  XPBar.EarnedXP();
+  inactivity.Start(2400);
+  repeat
+    if XPBar.EarnedXP() then
+      Exit(True);
+    if Chat.HasContinue() then
+    begin
+      Chat.ClickContinue();
+      Exit(True);
+    end;
+  until inactivity.IsFinished;
+end;
+
+function TRSFarmPatch.Rake(): Boolean;
+var
+  inactivity: TCountDown;
+  position: record last, current: TPoint; end;
+begin
+  XPBar.EarnedXP();
+
+  if not Self.WalkInteract(['Rake']) then
+    Exit;
+
+  inactivity.Start(2400);
+  position.last := Map.Position();
+  repeat
+    position.current := Map.Position();
+    if position.current <> position.last then
+      inactivity.Restart();
+    position.last := position.current;
+
+    if XPBar.EarnedXP() then
+    begin
+      inactivity.Restart();
+      Result := True;
+    end;
+  until inactivity.IsFinished;
 end;
 
 function TRSFarmPatch.Harvest(): Boolean;
@@ -592,22 +647,90 @@ begin
   until inactivity.IsFinished;
 end;
 
-function TRSfarmPatch.Clear(): Boolean;
+function TRSFarmPatch.Clear(): Boolean;
+var
+  inactivity: TCountDown;
+  position: record last, current: TPoint; end;
 begin
+  XPBar.EarnedXP();
 
+  if not Self.WalkInteract(['Clear']) then
+    Exit;
+
+  inactivity.Start(4800);
+  position.last := Map.Position();
+  repeat
+    position.current := Map.Position();
+    if position.current <> position.last then
+      inactivity.Restart();
+    position.last := position.current;
+
+    if XPBar.EarnedXP() then
+    begin
+      inactivity.Restart();
+      Result := True;
+    end;
+
+    if Chat.HasContinue() then
+    begin
+      Chat.ClickContinue();
+      Exit(True);
+    end;
+  until inactivity.IsFinished;
 end;
 
 function TRSFarmPatch.Cure(): Boolean;
+var
+  inactivity: TCountDown;
 begin
+  if Self.UseCurePlant then
+  begin
+    if not ((Self.WalkFind() <> []) and Magic.CastSpell(ERSSpell.CURE_PLANT)) then
+      Exit;
 
+    XPBar.EarnedXP();
+    if not Self.Interact() then
+      Exit;
+
+    inactivity.Start(2400);
+    repeat
+      if XPBar.EarnedXP() then
+        Exit(True);
+    until inactivity.IsFinished;
+    Exit;
+  end;
+
+  if Self.WalkFind() = [] then
+    Exit;
+
+  if not Inventory.Open() then
+    Exit;
+
+  if not Inventory.Select('Plant cure', True) then
+    Exit;
+
+  XPBar.EarnedXP();
+  if not Self.Interact() then
+    Exit;
+
+  inactivity.Start(2400);
+  repeat
+    if XPBar.EarnedXP() then
+      Exit(True);
+    if Chat.HasContinue() then
+    begin
+      Chat.ClickContinue();
+      Exit(True);
+    end;
+  until inactivity.IsFinished;
 end;
 
 function TRSFarmPatch.Resurrect(): Boolean;
 var
   patchResults: TRSFarmPatchFindResults;
-  spellbookSwap: Boolean;
+  inactivity: TCountDown;
 begin
-  if spellbookSwap := (Magic.GetSpellBook() = ERSSpellBook.LUNAR) and not Magic.SpellBookSwap(ERSSpellBook.ARCEUUS) then
+  if (Magic.GetSpellBook() = ERSSpellBook.LUNAR) and (not Magic.SpellBookSwap(ERSSpellBook.ARCEUUS)) then
     Exit;
 
   if Magic.GetSpellBook() <> ERSSpellBook.ARCEUUS then
@@ -618,21 +741,32 @@ begin
     Exit;
 
   XPBar.EarnedXP();
-  if Magic.CastSpell(ERSSpell.RESURRECT_CROPS) and Self.Interact() then
-  begin
-    //TODO wait for xp drop or chat.hascontinue
+  if not (Magic.CastSpell(ERSSpell.RESURRECT_CROPS) and Self.Interact()) then
+    Exit;
 
-    //if chat.hascontinue then rescrop failed
-    //if earned xp then complete, maybe check if composted??
+  inactivity.Start(3600);
+  repeat
+    if XPBar.EarnedXP() then
+      Exit(True);
 
-  end;
-
+    if Chat.HasContinue() then
+    begin
+      Chat.ClickContinue();
+      Self.ResurrectCropFailed := True;
+      Self.DebugLn('Resurrect crops failed (chat continue).');
+      Exit(False);
+    end;
+  until inactivity.IsFinished;
 end;
 
 function TRSFarmPatch.CleanHerbs(): Boolean;
 const
-  GRIMY_HERBS: TRSItemArray = [];
-   //TRSToolLeprechaun.NOTABLE_ITEMS[TRSToolLeprechaun.GRIMY_HERBS_START..TRSToolLeprechaun.GRIMY_HERBS_END];
+  GRIMY_HERBS: TRSItemArray = [
+    'Grimy guam leaf', 'Grimy marrentill', 'Grimy tarromin', 'Grimy harralander',
+    'Grimy ranarr weed', 'Grimy toadflax', 'Grimy irit leaf', 'Grimy avantoe',
+    'Grimy kwuarm', 'Grimy snapdragon', 'Grimy cadantine', 'Grimy lantadyme',
+    'Grimy dwarf weed', 'Grimy torstol'
+  ];
 var
   slot: Integer;
   slots: TIntegerArray;
@@ -640,9 +774,11 @@ begin
   if not Inventory.Items.FindAll(GRIMY_HERBS, slots) then
     Exit;
 
+  Result := True;
   for slot in ClusteredClickPattern(Inventory.Slots.Boxes(), slots) do
   begin
-    Inventory.Slots.Interact(slot, 'Clean');
+    if not Inventory.Slots.Interact(slot, 'Clean') then
+      Result := False;
     Sleep(50, 200);
   end;
 end;
@@ -652,24 +788,42 @@ begin
   Result := ToolLeprechaun.NoteItems();
 end;
 
+function TRSFarmPatch.WithdrawCompost(): Boolean;
+begin
+  if not ToolLeprechaun.OpenInterface() then
+  begin
+    Self.DebugLn('Failed to open tool leprechaun for compost withdraw');
+    Exit;
+  end;
+
+  case Self.CompostMethod of
+    ERSCompost.COMPOST:         Result := ToolLeprechaun.Withdraw(ERSToolLeprechaunItem.NORMAL_COMPOST, 1);
+    ERSCompost.SUPERCOMPOST:    Result := ToolLeprechaun.Withdraw(ERSToolLeprechaunItem.SUPERCOMPOST, 1);
+    ERSCompost.ULTRACOMPOST:    Result := ToolLeprechaun.Withdraw(ERSToolLeprechaunItem.ULTRACOMPOST, 1);
+    ERSCompost.BOTTOMLESS_BUCKET: Result := ToolLeprechaun.Withdraw(ERSToolLeprechaunItem.BOTTOMLESS_BUCKET, 1);
+    else
+      Self.DebugLn('No leprechaun withdraw mapping for compost method %s', [Self.CompostMethod.ToString()]);
+  end;
+
+  ToolLeprechaun.CloseInterface();
+end;
+
 function TRSFarmPatch.HandleAction(action: ERSFarmPatchAction): Boolean;
 begin
   case action of
-    //TODO CHECK_HEALTH
-    ERSFarmPatchAction.HARVEST: Result := Self.Harvest();
-    ERSFarmPatchAction.PLANT: Result := Self.Plant();
-    ERSFarmPatchAction.COMPOST: Result := Self.Compost();
-    ERSFarmPatchAction.CAST_FERTILE_SOIL: Result := Self.FertileSoil();
-    //TODO CURE
-    //TODO CAST_CURE_PLANT
-    //TODO WITHDRAW_PLANT_CURE
-    //TODO WITHDRAW_COMPOST
-    //TODO DEPOSIT_BUCKETS
-    //TODO CLOSE_INTERFACE
-    //TODO CHOP_TREE
-    //TODO GARDNER_CHOP_TREE
-    ERSFarmPatchAction.CLEAN_HERBS: Result := Self.CleanHerbs();
-    ERSFarmPatchAction.NOTE_ITEMS: Result := Self.NoteItems();
+    ERSFarmPatchAction.RAKE:                Result := Self.Rake();
+    ERSFarmPatchAction.CHECK_HEALTH:        Result := Self.CheckHealth();
+    ERSFarmPatchAction.HARVEST:             Result := Self.Harvest();
+    ERSFarmPatchAction.PLANT:               Result := Self.Plant();
+    ERSFarmPatchAction.COMPOST:             Result := Self.Compost();
+    ERSFarmPatchAction.CAST_FERTILE_SOIL:   Result := Self.FertileSoil();
+    ERSFarmPatchAction.CLEAR:               Result := Self.Clear();
+    ERSFarmPatchAction.CAST_CURE_PLANT,
+    ERSFarmPatchAction.CURE_PLANT_POTION:   Result := Self.Cure();
+    ERSFarmPatchAction.CAST_RESURRECT_CROP: Result := Self.Resurrect();
+    ERSFarmPatchAction.WITHDRAW_COMPOST:    Result := Self.WithdrawCompost();
+    ERSFarmPatchAction.CLEAN_HERBS:         Result := Self.CleanHerbs();
+    ERSFarmPatchAction.NOTE_ITEMS:          Result := Self.NoteItems();
   end;
 end;
 
@@ -682,7 +836,7 @@ var
 begin
   if (not FarmingTravel.Travel(Self.TravelMethod)) or (Self.WalkFind = []) then
   begin
-    Self.DebugLn('Failed to tavel, or find farming patch %s. Skipping it', [ToString(Self.Descriptor)]);
+    Self.DebugLn('Failed to travel, or find farming patch %s. Skipping it', [ToString(Self.Descriptor)]);
     Exit;
   end;
 
@@ -709,6 +863,7 @@ begin
   until inactivity.IsFinished;
 end;
 
+{$IFDEF FARM_PATCH_MAIN}
 var
   patch: TRSFarmPatch;
 begin
@@ -720,9 +875,8 @@ begin
   patch.Descriptor := ERSFarmPatchDescriptor.HOSIDIOUS_ALLOT_N;
   patch.TravelMethod := ERSFarmingTravel.XERIC_TALISMAN_GLADE;
   patch.Seed := 'Watermelon seed';
-  showontarget(XPBar.Bounds);
-  xpbar.Read;
-  //patch.WalkInteract(['Harvest']);
-  patch.run;
-    transporter.
+  patch.CompostMethod := ERSCompost.ULTRACOMPOST;
+  patch.Reset();
+  patch.Run();
 end.
+{$ENDIF}

@@ -161,6 +161,15 @@ end;
 
 function TRSMagic.SpellBookSwap(spellBook: ERSSpellBook): Boolean;
 begin
+  if Magic.GetSpellBook() = spellBook then
+    Exit(True);
 
+  if Magic.GetSpellBook() <> ERSSpellBook.LUNAR then
+    Exit;
+
+  if not Magic.CastSpell(ERSSpell.SPELLBOOK_SWAP) then
+    Exit;
+
+  Result := SleepUntil(Magic.GetSpellBook() = spellBook, Random(100, 800), 3000);
 end;
 
