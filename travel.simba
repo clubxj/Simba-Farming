@@ -1,206 +1,298 @@
 {$INCLUDE_ONCE WaspLib/osrs.simba}
 
 type
-  ERSFarmingTravel = enum(
-    ICY_BASALT,
-
-    STONY_BASALT,
-
-    CATHERBY_TABLET,
-    CATHERBY_TELEPORT,
-    CATHERBY_POH_PORTAL,
-    CATHERBY_POH_NEXUS,
-
-    CAMELOT_TELEPORT,
-    CAMELOT_TABLET,
-    CAMELOT_POH_PORTAL,
-    CAMELOT_POH_NEXUS,
-
-    ARDOUGNE_FARM_CLOAK,
-
-    ARDOUGNE_MONESTARY_CLOAK,
-
-    XERIC_TALISMAN_GLADE,
-    HOSIDIOUS_TABLET,
-
-    OUTSIDE_POH,
-    HOSIDIOUS_CONSTRUCTION_CAPE,
-
-    FALADOR_FARM_EXPLORERS_RING,
-    DRAYNOR_GLORY,
-
-    FENKENSTRAIN_TELEPORT,
-    FENKENSTRAIN_TABLET,
-    FENKENSTRAIN_POH_PORTAL,
-    FENKENSTRAIN_POH_NEXUS,
-    ECTOPHIAL,
-
-    FARMING_GUILD_FARMING_CAPE,
-    FARMING_GUILD_SKILLS_NECKLACE,
-    FARMING_GUILD_POH_SPIRIT_TREE,
-
-    HARMONY_ISLAND_TELEPORT,
-    HARMONY_ISLAND_TABLET,
-    HARMONY_ISLAND_POH_PORTAL,
-    HARMONY_ISLAND_POH_NEXUS
+  ERSFarmTravelType = enum(
+    ITEM,
+    MAGIC,
+    POH_PORTAL,
+    POH_NEXUS,
+    POH_SPIRIT_TREE,
+    POH_FAIRY_RING,
+    CONFIRM
   );
 
-  TRSFarmingTravelHelper = record
-    const WEISS_MAP:              TBox = [ 7256, 34654,  7312, 34722];
-    const STRONGHOLD_MAP:         TBox = [ 7180, 35618,  7316, 35706];
-    const CAHTERBY_MAP:           TBox = [ 6896, 36494,  7364, 36730];
-    const ARDOUGNE_FARM_MAP:      TBox = [ 6440, 36886,  6696, 37298];
-    const ARDOUGNE_MONESTARY_MAP: TBox = [ 6268, 37478,  6556, 37614];
-    const HOSIDIOUS_MAP:          TBox = [ 2816, 36138,  2968, 36386];
-    const FALADOR_FARM_MAP:       TBox = [ 7728, 36866,  8320, 37474];
-    const PHASMATYS_FARM_MAP:     TBox = [10072, 36262, 10584, 36390];
-    const FARMING_GUILD_MAP:      TBox = [  796, 35338,  1144, 35582];
-    const HARMONY_ISLAND_MAP:     TBox = [11012, 38910, 11268, 39162];
+  // Reqs: AND of OR-groups. Each inner array is alternatives; all groups must be met.
+  // Example fairy ring: [["Construct. cape", "Teleport to house", "Law rune"], ["Dramen staff", "Lunar staff"]]
+  // Loaded for future GUI validation — travel runtime does not check them.
+  TRSFarmTravelReqs = array of TStringArray;
+
+  TRSFarmTravelDestination = record
+    Id: String;
+    MapArea: TBox;
+  end;
+
+  TRSFarmTravelMethod = record
+    Id: String;
+    TravelType: ERSFarmTravelType;
+    DestinationId: String;
+    Item: TRSItem;
+    Option: String;
+    SpellName: String;
+    Reqs: TRSFarmTravelReqs;
+  end;
+
+  TRSFarmTravelPatchRoute = record
+    PatchId: String;
+    DestinationId: String;
+    MethodIds: TStringArray;
   end;
 
   TRSFarmingTravel = record
-    TravelFunctions: array[ERSFarmingTravel] of function(attempts: Integer): Boolean of object;
-    Helper: TRSFarmingTravelHelper;
+    Loaded: Boolean;
+    DataPath: String;
+    Destinations: array of TRSFarmTravelDestination;
+    Methods: array of TRSFarmTravelMethod;
+    Patches: array of TRSFarmTravelPatchRoute;
   end;
 
 var FarmingTravel: TRSFarmingTravel;
 
-function TRSFarmingTravel.Travel(travelMethod: ERSFarmingTravel; attempts: Integer = 2): Boolean;
+function ERSFarmTravelType.FromString(value: String): ERSFarmTravelType; static;
 begin
-  writeln travelmethod;
-  writeln @self.TravelFunctions[travelMethod];
-  Result := Self.TravelFunctions[travelMethod](attempts);
+  case value.ToLower() of
+    'item':            Exit(ERSFarmTravelType.ITEM);
+    'magic':           Exit(ERSFarmTravelType.MAGIC);
+    'poh_portal':      Exit(ERSFarmTravelType.POH_PORTAL);
+    'poh_nexus':       Exit(ERSFarmTravelType.POH_NEXUS);
+    'poh_spirit_tree': Exit(ERSFarmTravelType.POH_SPIRIT_TREE);
+    'poh_fairy_ring':  Exit(ERSFarmTravelType.POH_FAIRY_RING);
+    'confirm':         Exit(ERSFarmTravelType.CONFIRM);
+  else
+    raise Format('Unknown travel type "%s"', [value]);
+  end;
 end;
 
-procedure TRSFarmingTravel.Init();
+function TRSFarmingTravel.BoxFromJSON(item: TJSONItem): TBox; static;
 begin
-  Self.TravelFunctions[ERSFarmingTravel.ICY_BASALT                    ] := @Self.Helper._ICY_BASALT;
-  Self.TravelFunctions[ERSFarmingTravel.STONY_BASALT                  ] := @Self.Helper._STONY_BASALT;
-  Self.TravelFunctions[ERSFarmingTravel.CATHERBY_TABLET               ] := @Self.Helper._CATHERBY_TABLET;
-  Self.TravelFunctions[ERSFarmingTravel.CATHERBY_TELEPORT             ] := @Self.Helper._CATHERBY_TELEPORT;
-  Self.TravelFunctions[ERSFarmingTravel.CATHERBY_POH_PORTAL           ] := @Self.Helper._CATHERBY_POH_PORTAL;
-  Self.TravelFunctions[ERSFarmingTravel.CATHERBY_POH_NEXUS            ] := @Self.Helper._CATHERBY_POH_NEXUS;
-  Self.TravelFunctions[ERSFarmingTravel.CAMELOT_TELEPORT              ] := @Self.Helper._CAMELOT_TELEPORT;
-  Self.TravelFunctions[ERSFarmingTravel.CAMELOT_TABLET                ] := @Self.Helper._CAMELOT_TABLET;
-  Self.TravelFunctions[ERSFarmingTravel.CAMELOT_POH_PORTAL            ] := @Self.Helper._CAMELOT_POH_PORTAL;
-  Self.TravelFunctions[ERSFarmingTravel.CAMELOT_POH_NEXUS             ] := @Self.Helper._CAMELOT_POH_NEXUS;
-  Self.TravelFunctions[ERSFarmingTravel.ARDOUGNE_FARM_CLOAK           ] := @Self.Helper._ARDOUGNE_FARM_CLOAK;
-  Self.TravelFunctions[ERSFarmingTravel.ARDOUGNE_MONESTARY_CLOAK      ] := @Self.Helper._ARDOUGNE_MONESTARY_CLOAK;
-  Self.TravelFunctions[ERSFarmingTravel.XERIC_TALISMAN_GLADE          ] := @Self.Helper._XERIC_TALISMAN_GLADE;
-  Self.TravelFunctions[ERSFarmingTravel.HOSIDIOUS_TABLET              ] := @Self.Helper._HOSIDIOUS_TABLET;
-  Self.TravelFunctions[ERSFarmingTravel.OUTSIDE_POH                   ] := @Self.Helper._OUTSIDE_POH;
-  Self.TravelFunctions[ERSFarmingTravel.HOSIDIOUS_CONSTRUCTION_CAPE   ] := @Self.Helper._HOSIDIOUS_CONSTRUCTION_CAPE;
-  Self.TravelFunctions[ERSFarmingTravel.FALADOR_FARM_EXPLORERS_RING   ] := @Self.Helper._FALADOR_FARM_EXPLORERS_RING;
-  Self.TravelFunctions[ERSFarmingTravel.DRAYNOR_GLORY                 ] := @Self.Helper._DRAYNOR_GLORY;
-  Self.TravelFunctions[ERSFarmingTravel.FENKENSTRAIN_TELEPORT         ] := @Self.Helper._FENKENSTRAIN_TELEPORT;
-  Self.TravelFunctions[ERSFarmingTravel.FENKENSTRAIN_TABLET           ] := @Self.Helper._FENKENSTRAIN_TABLET;
-  Self.TravelFunctions[ERSFarmingTravel.FENKENSTRAIN_POH_PORTAL       ] := @Self.Helper._FENKENSTRAIN_POH_PORTAL;
-  Self.TravelFunctions[ERSFarmingTravel.FENKENSTRAIN_POH_NEXUS        ] := @Self.Helper._FENKENSTRAIN_POH_NEXUS;
-  Self.TravelFunctions[ERSFarmingTravel.ECTOPHIAL                     ] := @Self.Helper._ECTOPHIAL;
-  Self.TravelFunctions[ERSFarmingTravel.FARMING_GUILD_FARMING_CAPE    ] := @Self.Helper._FARMING_GUILD_FARMING_CAPE;
-  Self.TravelFunctions[ERSFarmingTravel.FARMING_GUILD_SKILLS_NECKLACE ] := @Self.Helper._FARMING_GUILD_SKILLS_NECKLACE;
-  Self.TravelFunctions[ERSFarmingTravel.FARMING_GUILD_POH_SPIRIT_TREE ] := @Self.Helper._FARMING_GUILD_POH_SPIRIT_TREE;
-  Self.TravelFunctions[ERSFarmingTravel.HARMONY_ISLAND_TELEPORT       ] := @Self.Helper._HARMONY_ISLAND_TELEPORT;
-  Self.TravelFunctions[ERSFarmingTravel.HARMONY_ISLAND_TABLET         ] := @Self.Helper._HARMONY_ISLAND_TABLET;
-  Self.TravelFunctions[ERSFarmingTravel.HARMONY_ISLAND_POH_PORTAL     ] := @Self.Helper._HARMONY_ISLAND_POH_PORTAL;
-  Self.TravelFunctions[ERSFarmingTravel.HARMONY_ISLAND_POH_NEXUS      ] := @Self.Helper._HARMONY_ISLAND_POH_NEXUS;
+  if (item.Typ <> EJSONType.ARR) or (item.Count <> 4) then
+    raise 'Travel destination map must be [x1, y1, x2, y2]';
+
+  Result := [
+    item.Item[0].AsInt,
+    item.Item[1].AsInt,
+    item.Item[2].AsInt,
+    item.Item[3].AsInt
+  ];
 end;
 
-procedure TRSFarmingTravelHelper._LoadMap(mapArea: TBox);
-begin
-  Map.AddEx([RSTranslator.Global2Chunk(mapArea.Expand(80))], [0]);
-  TRSMapChunk
-end;
-
-function TRSFarmingTravelHelper._ConfirmTravel(mapArea: TBox): Boolean;
-begin
-  Result := SleepUntil(Map.Position in mapArea, Random(100, 600), 3000);
-end;
-
-function TRSFarmingTravelHelper._ItemTeleport(item: TRSItem; option: String; mapArea: TBox; attempts: Integer): Boolean;
+function TRSFarmingTravel.StringArrayFromJSON(item: TJSONItem): TStringArray; static;
 var
-  itemInterface: TRSItemInterface;
-  slotInterface: TRSSlotInterface;
+  i: Integer;
+begin
+  if item.Typ <> EJSONType.ARR then
+    raise 'Expected JSON array of strings';
+
+  SetLength(Result, item.Count);
+  for i := 0 to item.Count - 1 do
+    Result[i] := item.Item[i].AsString;
+end;
+
+function TRSFarmingTravel.ReqsFromJSON(item: TJSONItem): TRSFarmTravelReqs; static;
+var
+  i: Integer;
+begin
+  if item.Typ <> EJSONType.ARR then
+    raise 'travel.json reqs must be an array of string arrays';
+
+  SetLength(Result, item.Count);
+  for i := 0 to item.Count - 1 do
+  begin
+    if item.Item[i].Typ <> EJSONType.ARR then
+      raise 'travel.json reqs groups must be arrays of item name strings';
+    Result[i] := Self.StringArrayFromJSON(item.Item[i]);
+  end;
+end;
+
+function TRSFarmingTravel.JSONHas(item: TJSONItem; key: String): Boolean; static;
+begin
+  try
+    Result := item.Item[key].Typ <> EJSONType.UNKNOWN;
+  except
+    Result := False;
+  end;
+end;
+
+function TRSFarmingTravel.ResolveDataPath(path: String): String;
+var
+  candidate: String;
+  candidates: TStringArray;
+begin
+  if path <> '' then
+  begin
+    if not FileExists(path) then
+      raise Format('Travel data file not found: %s', [path]);
+    Exit(path);
+  end;
+
+  candidates := [
+    IncludePath + 'data/travel.json',
+    IncludePath + '../data/travel.json',
+    './data/travel.json',
+    'data/travel.json'
+  ];
+
+  for candidate in candidates do
+    if FileExists(candidate) then
+      Exit(candidate);
+
+  raise 'travel.json not found. Pass an absolute path to FarmingTravel.Init()';
+end;
+
+function TRSFarmingTravel.HasDestination(destinationId: String): Boolean;
+var
+  destination: TRSFarmTravelDestination;
+begin
+  for destination in Self.Destinations do
+    if destination.Id = destinationId then
+      Exit(True);
+end;
+
+function TRSFarmingTravel.HasMethod(methodId: String): Boolean;
+var
+  method: TRSFarmTravelMethod;
+begin
+  for method in Self.Methods do
+    if method.Id = methodId then
+      Exit(True);
+end;
+
+function TRSFarmingTravel.FindDestination(destinationId: String): TRSFarmTravelDestination;
+var
+  destination: TRSFarmTravelDestination;
+begin
+  for destination in Self.Destinations do
+    if destination.Id = destinationId then
+      Exit(destination);
+
+  raise Format('Unknown travel destination "%s"', [destinationId]);
+end;
+
+function TRSFarmingTravel.FindMethod(methodId: String): TRSFarmTravelMethod;
+var
+  method: TRSFarmTravelMethod;
+begin
+  for method in Self.Methods do
+    if method.Id = methodId then
+      Exit(method);
+
+  raise Format('Unknown travel method "%s"', [methodId]);
+end;
+
+function TRSFarmingTravel.FindPatchRoute(patchId: String): TRSFarmTravelPatchRoute;
+var
+  route: TRSFarmTravelPatchRoute;
+begin
+  for route in Self.Patches do
+    if route.PatchId = patchId then
+      Exit(route);
+
+  raise Format('No travel route configured for patch "%s"', [patchId]);
+end;
+
+function TRSFarmingTravel.SpellFromName(spellName: String): ERSSpell;
+var
+  spell: ERSSpell;
+  needle: String;
+begin
+  needle := spellName.ToUpper().Replace(' ', '_');
+  for spell in ERSSpell do
+    if ToStr(spell).After('ERSSpell.') = needle then
+      Exit(spell);
+
+  raise Format('Unknown spell "%s" in travel.json', [spellName]);
+end;
+
+procedure TRSFarmingTravel.LoadMap(destinationId: String);
+var
+  destination: TRSFarmTravelDestination;
+begin
+  destination := Self.FindDestination(destinationId);
+  Map.AddEx([RSTranslator.Global2Chunk(destination.MapArea.Expand(80))], [0]);
+end;
+
+function TRSFarmingTravel.Confirm(destinationId: String; timeout: Integer = 3000): Boolean;
+var
+  destination: TRSFarmTravelDestination;
+begin
+  destination := Self.FindDestination(destinationId);
+  Result := SleepUntil(Map.Position in destination.MapArea, Random(100, 600), timeout);
+end;
+
+function TRSFarmingTravel.AlreadyThere(destinationId: String): Boolean;
+var
+  destination: TRSFarmTravelDestination;
+begin
+  destination := Self.FindDestination(destinationId);
+  Result := destination.MapArea.Contains(Map.Position);
+end;
+
+function TRSFarmingTravel.TryItemOnInterface(method: TRSFarmTravelMethod; items: TRSItemInterface; slots: TRSSlotInterface; attempts: Integer): Boolean;
+var
   attempt, slot: Integer;
 begin
-  Self._LoadMap(mapArea);
-  if mapArea.Contains(Map.Position) then
+  for attempt := 1 to attempts do
+    if items.Find(method.Item, slot) then
+    begin
+      slots.Hover(slot);
+      Sleep(75);
+      if MainScreen.IsUpText(method.Option) then
+      begin
+        Mouse.Click(EMouseButton.LEFT);
+        Exit(Self.Confirm(method.DestinationId));
+      end else if ChooseOption.Open then
+      begin
+        if ChooseOption.Find([method.Option], False, False) then
+          Exit(ChooseOption.Select(method.Option, False, True) and Self.Confirm(method.DestinationId))
+        else if ChooseOption.OpenSubmenu(True) then
+          Exit(ChooseOption.SelectSubmenuOption([method.Option], False, True) and Self.Confirm(method.DestinationId));
+      end;
+    end;
+end;
+
+function TRSFarmingTravel.ItemTeleport(method: TRSFarmTravelMethod; attempts: Integer): Boolean;
+begin
+  Self.LoadMap(method.DestinationId);
+  if Self.AlreadyThere(method.DestinationId) then
     Exit(True);
 
   if Inventory.IsOpen then
   begin
-    itemInterface := Inventory.Items;
-    slotInterface := Inventory.Slots;
+    if Self.TryItemOnInterface(method, Inventory.Items, Inventory.Slots, attempts) then
+      Exit(True);
   end else if Equipment.IsOpen then
   begin
-    itemInterface := Equipment.Items;
-    slotInterface := Equipment.Slots;
+    if Self.TryItemOnInterface(method, Equipment.Items, Equipment.Slots, attempts) then
+      Exit(True);
   end else if Inventory.Open then
   begin
-    itemInterface := Inventory.Items;
-    slotInterface := Inventory.Slots;
+    if Self.TryItemOnInterface(method, Inventory.Items, Inventory.Slots, attempts) then
+      Exit(True);
   end else if Equipment.Open then
   begin
-    itemInterface := Equipment.Items;
-    slotInterface := Equipment.Slots;
+    if Self.TryItemOnInterface(method, Equipment.Items, Equipment.Slots, attempts) then
+      Exit(True);
   end else
     Exit;
-
-  for attempt := 1 to attempts do
-    if itemInterface.Find(item, slot) then
-    begin
-      slotInterface.Hover(slot);
-      Sleep(75);
-      if MainScreen.IsUpText(option) then
-      begin
-        Mouse.Click(EMouseButton.LEFT);
-        Exit(Self._ConfirmTravel(mapArea));
-      end else if ChooseOption.Open then
-      begin
-        if ChooseOption.Find([option], False, False) then
-          Exit(ChooseOption.Select(option, False, True) and Self._ConfirmTravel(mapArea))
-        else if ChooseOption.OpenSubmenu(True) then
-          Exit(ChooseOption.SelectSubmenuOption([option], False, True) and Self._ConfirmTravel(mapArea));
-      end;
-    end;
 
   if Inventory.IsOpen and Equipment.Open then
-  begin
-    itemInterface := Equipment.Items;
-    slotInterface := Equipment.Slots;
-  end else if Equipment.IsOpen and Inventory.Open then
-  begin
-    itemInterface := Inventory.Items;
-    slotInterface := Inventory.Slots;
-  end else
-    Exit;
+    Exit(Self.TryItemOnInterface(method, Equipment.Items, Equipment.Slots, attempts));
 
-  for attempt := 1 to attempts do
-    if itemInterface.Find(item, slot) then
-    begin
-      slotInterface.Hover(slot);
-      Sleep(75);
-      if MainScreen.IsUpText(option) then
-      begin
-        Mouse.Click(EMouseButton.LEFT);
-        Exit(Self._ConfirmTravel(mapArea));
-      end else if ChooseOption.Open then
-      begin
-        if ChooseOption.Find([option], False, False) then
-          Exit(ChooseOption.Select(option, False, True) and Self._ConfirmTravel(mapArea))
-        else if ChooseOption.OpenSubmenu(True) then
-          Exit(ChooseOption.SelectSubmenuOption([option], False, True) and Self._ConfirmTravel(mapArea));
-      end;
-    end;
+  if Equipment.IsOpen and Inventory.Open then
+    Exit(Self.TryItemOnInterface(method, Inventory.Items, Inventory.Slots, attempts));
 end;
 
-function TRSFarmingTravelHelper._MagicTeleport(spell: ERSSpell; option: String; mapArea: TBox; attempts: Integer): Boolean;
+function TRSFarmingTravel.MagicTeleport(method: TRSFarmTravelMethod; attempts: Integer): Boolean;
 var
   attempt: Integer;
+  spell: ERSSpell;
+  destination: TRSFarmTravelDestination;
 begin
-  Self._LoadMap(mapArea);
-  if mapArea.Contains(Map.Position) then
+  Self.LoadMap(method.DestinationId);
+  if Self.AlreadyThere(method.DestinationId) then
     Exit(True);
+
+  spell := Self.SpellFromName(method.SpellName);
+  destination := Self.FindDestination(method.DestinationId);
 
   for attempt := 1 to attempts do
   begin
@@ -208,214 +300,225 @@ begin
       if not (Magic.CastSpell(ERSSpell.SPELLBOOK_SWAP) and SleepUntil((Magic.GetSpellBook <> ERSSpellBook.LUNAR), Random(100, 800), 3000)) then
         Continue;
 
-    if Magic.CastSpell(spell, option) and SleepUntil(mapArea.Contains(Map.Position), Random(100, 800), 2400) then
+    if Magic.CastSpell(spell, method.Option) and SleepUntil(destination.MapArea.Contains(Map.Position), Random(100, 800), 2400) then
       Exit(True);
   end;
 end;
 
-function TRSFarmingTravelHelper._POHPortal(): Boolean;
+function TRSFarmingTravel.POHPortal(method: TRSFarmTravelMethod; attempts: Integer): Boolean;
 begin
-Result := False;
- raise 'POH teleports are not yet implemented';
+  Result := False;
+  raise Format('POH portal travel is not implemented yet (%s -> %s)', [method.Id, method.DestinationId]);
 end;
 
-function TRSFarmingTravelHelper._POHNexus(): Boolean;
+function TRSFarmingTravel.POHNexus(method: TRSFarmTravelMethod; attempts: Integer): Boolean;
 begin
-Result := False;
-  raise 'POH nexus is not yet implemented';
+  Result := False;
+  raise Format('POH nexus travel is not implemented yet (%s -> %s)', [method.Id, method.DestinationId]);
 end;
 
-function TRSFarmingTravelHelper._ICY_BASALT(attempts: Integer): Boolean;
+function TRSFarmingTravel.POHSpiritTree(method: TRSFarmTravelMethod; attempts: Integer): Boolean;
 begin
-  Result := Self._ItemTeleport('Icy basalt', 'Teleport', TRSFarmingTravelHelper.WEISS_MAP, attempts);
+  Result := False;
+  raise Format('POH spirit tree travel is not implemented yet (%s -> %s)', [method.Id, method.DestinationId]);
 end;
 
-function TRSFarmingTravelHelper._STONY_BASALT(attempts: Integer): Boolean;
-const
-  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+function TRSFarmingTravel.POHFairyRing(method: TRSFarmTravelMethod; attempts: Integer): Boolean;
 begin
-  Result := Self._ItemTeleport('Stony basalt', 'Teleport', TRSFarmingTravelHelper.STRONGHOLD_MAP, attempts);
+  Result := False;
+  raise Format('POH fairy ring travel is not implemented yet (%s -> %s)', [method.Id, method.DestinationId]);
 end;
 
-function TRSFarmingTravelHelper._CATHERBY_TABLET(attempts: Integer): Boolean;
-const
-  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+function TRSFarmingTravel.ConfirmOnly(method: TRSFarmTravelMethod; attempts: Integer): Boolean;
 begin
-  Result := Self._ItemTeleport('Catherby teleport', 'Teleport', TRSFarmingTravelHelper.CAHTERBY_MAP, attempts);
+  Self.LoadMap(method.DestinationId);
+  Result := Self.Confirm(method.DestinationId);
 end;
 
-function TRSFarmingTravelHelper._CATHERBY_TELEPORT(attempts: Integer): Boolean;
-const
-  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+function TRSFarmingTravel.Travel(methodId: String; attempts: Integer = 2): Boolean;
+var
+  method: TRSFarmTravelMethod;
 begin
-  Result := Self._MagicTeleport(ERSSpell.CATHERBY_TELEPORT, 'Teleport', TRSFarmingTravelHelper.CAHTERBY_MAP, attempts);
+  if not Self.Loaded then
+    raise 'FarmingTravel.Init() must be called before Travel()';
+
+  method := Self.FindMethod(methodId);
+  WriteLn(Format('%s:[FarmingTravel]: method=%s type=%s destination=%s', [
+    GetTimeStamp(),
+    method.Id,
+    ToStr(method.TravelType),
+    method.DestinationId
+  ]));
+
+  case method.TravelType of
+    ERSFarmTravelType.ITEM:            Exit(Self.ItemTeleport(method, attempts));
+    ERSFarmTravelType.MAGIC:           Exit(Self.MagicTeleport(method, attempts));
+    ERSFarmTravelType.POH_PORTAL:      Exit(Self.POHPortal(method, attempts));
+    ERSFarmTravelType.POH_NEXUS:       Exit(Self.POHNexus(method, attempts));
+    ERSFarmTravelType.POH_SPIRIT_TREE: Exit(Self.POHSpiritTree(method, attempts));
+    ERSFarmTravelType.POH_FAIRY_RING:  Exit(Self.POHFairyRing(method, attempts));
+    ERSFarmTravelType.CONFIRM:         Exit(Self.ConfirmOnly(method, attempts));
+  end;
 end;
 
-function TRSFarmingTravelHelper._CAMELOT_TABLET(attempts: Integer): Boolean;
-const
-  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+function TRSFarmingTravel.TravelToPatch(patchId: String; preferredMethod: String = ''; attempts: Integer = 2): Boolean;
+var
+  route: TRSFarmTravelPatchRoute;
+  methodId: String;
 begin
-  Result := Self._ItemTeleport('Camelot teleport', 'Teleport', TRSFarmingTravelHelper.CAHTERBY_MAP, attempts);
+  route := Self.FindPatchRoute(patchId);
+
+  if preferredMethod <> '' then
+  begin
+    if not route.MethodIds.Contains(preferredMethod) then
+      raise Format('Method "%s" is not allowed for patch "%s"', [preferredMethod, patchId]);
+    Exit(Self.Travel(preferredMethod, attempts));
+  end;
+
+  for methodId in route.MethodIds do
+    if Self.Travel(methodId, attempts) then
+      Exit(True);
 end;
 
-function TRSFarmingTravelHelper._CAMELOT_TELEPORT(attempts: Integer): Boolean;
-const
-  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+procedure TRSFarmingTravel.ParseDestinations(root: TJSONItem);
+var
+  destinations: TJSONItem;
+  node: TJSONItem;
+  i: Integer;
+  destination: TRSFarmTravelDestination;
 begin
-  Result := Self._MagicTeleport(ERSSpell.CAMELOT_TELEPORT, 'Teleport', TRSFarmingTravelHelper.CAHTERBY_MAP, attempts);
+  destinations := root.Item['destinations'];
+  if destinations.Typ <> EJSONType.ARR then
+    raise 'travel.json destinations must be an array';
+
+  SetLength(Self.Destinations, destinations.Count);
+  for i := 0 to destinations.Count - 1 do
+  begin
+    node := destinations.Item[i];
+    destination.Id := node.Item['id'].AsString;
+    destination.MapArea := Self.BoxFromJSON(node.Item['map']);
+    Self.Destinations[i] := destination;
+  end;
 end;
 
-function TRSFarmingTravelHelper._CATHERBY_POH_PORTAL(attempts: Integer): Boolean;
+procedure TRSFarmingTravel.ParseMethods(root: TJSONItem);
+var
+  methods: TJSONItem;
+  node: TJSONItem;
+  i: Integer;
+  method: TRSFarmTravelMethod;
 begin
-  Result := Self._POHPortal();
+  methods := root.Item['methods'];
+  if methods.Typ <> EJSONType.ARR then
+    raise 'travel.json methods must be an array';
+
+  SetLength(Self.Methods, methods.Count);
+  for i := 0 to methods.Count - 1 do
+  begin
+    node := methods.Item[i];
+    method.Id := node.Item['id'].AsString;
+    method.TravelType := ERSFarmTravelType.FromString(node.Item['type'].AsString);
+    method.DestinationId := node.Item['destination'].AsString;
+    method.Item := '';
+    method.Option := '';
+    method.SpellName := '';
+    method.Reqs := [];
+
+    if Self.JSONHas(node, 'item') then
+      method.Item := node.Item['item'].AsString;
+    if Self.JSONHas(node, 'option') then
+      method.Option := node.Item['option'].AsString;
+    if Self.JSONHas(node, 'spell') then
+      method.SpellName := node.Item['spell'].AsString;
+    if Self.JSONHas(node, 'reqs') then
+      method.Reqs := Self.ReqsFromJSON(node.Item['reqs']);
+
+    case method.TravelType of
+      ERSFarmTravelType.ITEM:
+        if (method.Item = '') or (method.Option = '') then
+          raise Format('Method "%s" requires item + option', [method.Id]);
+      ERSFarmTravelType.MAGIC:
+        if method.SpellName = '' then
+          raise Format('Method "%s" requires spell', [method.Id]);
+    end;
+
+    if not Self.HasDestination(method.DestinationId) then
+      raise Format('Method "%s" references unknown destination "%s"', [method.Id, method.DestinationId]);
+
+    Self.Methods[i] := method;
+  end;
 end;
 
-function TRSFarmingTravelHelper._CATHERBY_POH_NEXUS(attempts: Integer): Boolean;
+procedure TRSFarmingTravel.ParsePatches(root: TJSONItem);
+var
+  patches: TJSONItem;
+  node: TJSONItem;
+  i: Integer;
+  route: TRSFarmTravelPatchRoute;
+  methodId: String;
 begin
-  Result := Self._POHNexus();
+  patches := root.Item['patches'];
+  if patches.Typ <> EJSONType.ARR then
+    raise 'travel.json patches must be an array';
+
+  SetLength(Self.Patches, patches.Count);
+  for i := 0 to patches.Count - 1 do
+  begin
+    node := patches.Item[i];
+    route.PatchId := node.Item['id'].AsString;
+    route.DestinationId := node.Item['destination'].AsString;
+    route.MethodIds := Self.StringArrayFromJSON(node.Item['methods']);
+
+    if not Self.HasDestination(route.DestinationId) then
+      raise Format('Patch "%s" references unknown destination "%s"', [route.PatchId, route.DestinationId]);
+
+    for methodId in route.MethodIds do
+      if not Self.HasMethod(methodId) then
+        raise Format('Patch "%s" references unknown method "%s"', [route.PatchId, methodId]);
+
+    Self.Patches[i] := route;
+  end;
 end;
 
-function TRSFarmingTravelHelper._CAMELOT_POH_PORTAL(attempts: Integer): Boolean;
+procedure TRSFarmingTravel.Load(path: String = '');
+var
+  parser: TJSONParser;
 begin
-  Result := Self._POHPortal();
+  Self.DataPath := Self.ResolveDataPath(path);
+  parser := new TJSONParser();
+  parser.Load(Self.DataPath);
+
+  Self.ParseDestinations(parser);
+  Self.ParseMethods(parser);
+  Self.ParsePatches(parser);
+  Self.Loaded := True;
+
+  WriteLn(Format('%s:[FarmingTravel]: loaded %s (%d destinations, %d methods, %d patches)', [
+    GetTimeStamp(),
+    Self.DataPath,
+    Length(Self.Destinations),
+    Length(Self.Methods),
+    Length(Self.Patches)
+  ]));
 end;
 
-function TRSFarmingTravelHelper._CAMELOT_POH_NEXUS(attempts: Integer): Boolean;
+procedure TRSFarmingTravel.Init(path: String = '');
 begin
-  Result := Self._POHNexus();
+  Self.Load(path);
 end;
 
-function TRSFarmingTravelHelper._ARDOUGNE_FARM_CLOAK(attempts: Integer): Boolean;
-const
-  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+function TRSFarmingTravel.MethodIds(): TStringArray;
+var
+  method: TRSFarmTravelMethod;
 begin
-  Result := Self._ItemTeleport('Ardougne Farm Cloak', 'Teleport', TRSFarmingTravelHelper.ARDOUGNE_FARM_MAP, attempts);
+  for method in Self.Methods do
+    Result += method.Id;
 end;
 
-function TRSFarmingTravelHelper._ARDOUGNE_MONESTARY_CLOAK(attempts: Integer): Boolean;
-const
-  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
+function TRSFarmingTravel.PatchIds(): TStringArray;
+var
+  route: TRSFarmTravelPatchRoute;
 begin
-  Result := Self._ItemTeleport('Ardougne Monestary Cloak', 'Teleport', TRSFarmingTravelHelper.ARDOUGNE_MONESTARY_MAP, attempts);
+  for route in Self.Patches do
+    Result += route.PatchId;
 end;
-
-function TRSFarmingTravelHelper._HOSIDIOUS_TABLET(attempts: Integer): Boolean;
-const
-  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
-begin
-  Result := Self._ItemTeleport('Hosidious Tablet', 'Teleport', TRSFarmingTravelHelper.HOSIDIOUS_MAP, attempts);
-end;
-
-function TRSFarmingTravelHelper._OUTSIDE_POH(attempts: Integer): Boolean;
-const
-  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
-begin
-  Result := Self._ItemTeleport('Hosidious Tablet', 'Teleport', TRSFarmingTravelHelper.HOSIDIOUS_MAP, attempts);
-end;
-
-function TRSFarmingTravelHelper._HOSIDIOUS_CONSTRUCTION_CAPE(attempts: Integer): Boolean;
-const
-  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
-begin
-  Result := Self._ItemTeleport('Hosidious Construction Cape', 'Teleport', TRSFarmingTravelHelper.HOSIDIOUS_MAP, attempts);
-end;
-
-function TRSFarmingTravelHelper._XERIC_TALISMAN_GLADE(attempts: Integer): Boolean;
-begin
-  Result := Self._ItemTeleport('Xeric''s talisman', 'Xeric''s Glade', TRSFarmingTravelHelper.HOSIDIOUS_MAP, attempts);
-end;
-
-function TRSFarmingTravelHelper._FALADOR_FARM_EXPLORERS_RING(attempts: Integer): Boolean;
-const
-  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
-begin
-  Result := Self._ItemTeleport('Falador Farm Explorers Ring', 'Teleport', TRSFarmingTravelHelper.FALADOR_FARM_MAP, attempts);
-end;
-
-function TRSFarmingTravelHelper._DRAYNOR_GLORY(attempts: Integer): Boolean;
-const
-  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
-begin
-  Result := Self._ItemTeleport('Draynor Glory', 'Teleport', TRSFarmingTravelHelper.FALADOR_FARM_MAP, attempts);
-end;
-
-function TRSFarmingTravelHelper._FENKENSTRAIN_TELEPORT(attempts: Integer): Boolean;
-const
-  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
-begin
-  Result := Self._MagicTeleport(ERSSpell.FENKENSTRAINS_CASTLE_TELEPORT, 'Teleport', TRSFarmingTravelHelper.PHASMATYS_FARM_MAP, attempts);
-end;
-
-function TRSFarmingTravelHelper._FENKENSTRAIN_TABLET(attempts: Integer): Boolean;
-const
-  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
-begin
-  Result := Self._ItemTeleport('Fenkenstrain Tablet', 'Teleport', TRSFarmingTravelHelper.PHASMATYS_FARM_MAP, attempts);
-end;
-
-function TRSFarmingTravelHelper._FENKENSTRAIN_POH_PORTAL(attempts: Integer): Boolean;
-begin
-  Result := Self._POHPortal();
-end;
-
-function TRSFarmingTravelHelper._FENKENSTRAIN_POH_NEXUS(attempts: Integer): Boolean;
-begin
-  Result := Self._POHNexus();
-end;
-
-function TRSFarmingTravelHelper._ECTOPHIAL(attempts: Integer): Boolean;
-const
-  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
-begin
-  Result := Self._ItemTeleport('Ectophial', 'Teleport', TRSFarmingTravelHelper.PHASMATYS_FARM_MAP, attempts);
-end;
-
-function TRSFarmingTravelHelper._FARMING_GUILD_FARMING_CAPE(attempts: Integer): Boolean;
-const
-  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
-begin
-  Result := Self._ItemTeleport('Farming Guild Farming Cape', 'Teleport', TRSFarmingTravelHelper.FARMING_GUILD_MAP, attempts);
-end;
-
-function TRSFarmingTravelHelper._FARMING_GUILD_SKILLS_NECKLACE(attempts: Integer): Boolean;
-const
-  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
-begin
-  Result := Self._ItemTeleport('Farming Guild Skills Necklace', 'Teleport', TRSFarmingTravelHelper.FARMING_GUILD_MAP, attempts);
-end;
-
-function TRSFarmingTravelHelper._FARMING_GUILD_POH_SPIRIT_TREE(attempts: Integer): Boolean;
-const
-  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
-begin
-  Result := Self._ItemTeleport('Farming Guild Skills Necklace', 'Teleport', TRSFarmingTravelHelper.FARMING_GUILD_MAP, attempts);
-end;
-
-function TRSFarmingTravelHelper._HARMONY_ISLAND_TELEPORT(attempts: Integer): Boolean;
-const
-  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
-begin
-  Result := Self._MagicTeleport(ERSSpell.HARMONY_ISLAND_TELEPORT, 'Teleport', TRSFarmingTravelHelper.HARMONY_ISLAND_MAP, attempts);
-end;
-
-function TRSFarmingTravelHelper._HARMONY_ISLAND_TABLET(attempts: Integer): Boolean;
-const
-  CHUNK: TRSMapChunk = [[0,0,0,0], [0]];
-begin
-  Result := Self._ItemTeleport('Harmony Island Tablet', 'Teleport', TRSFarmingTravelHelper.HARMONY_ISLAND_MAP, attempts);
-end;
-
-function TRSFarmingTravelHelper._HARMONY_ISLAND_POH_PORTAL(attempts: Integer): Boolean;
-begin
-  Result := Self._POHPortal();
-end;
-
-function TRSFarmingTravelHelper._HARMONY_ISLAND_POH_NEXUS(attempts: Integer): Boolean;
-begin
-  Result := Self._POHNexus();
-end;
-
-
-
-
-

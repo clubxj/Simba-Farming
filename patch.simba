@@ -47,7 +47,7 @@ type
 
   TRSFarmPatch = record
     Descriptor: ERSFarmPatchDescriptor;
-    TravelMethod: ERSFarmingTravel;
+    TravelMethod: String; // method id from data/travel.json; empty = try patch route list
     Seed: TRSItem;
     CompostMethod: ERSCompost;
     UseResurrectCrop: Boolean;
@@ -680,9 +680,22 @@ var
   state: ERSFarmPatchState;
   action: ERSFarmPatchAction;
 begin
-  if (not FarmingTravel.Travel(Self.TravelMethod)) or (Self.WalkFind = []) then
+  if Self.TravelMethod <> '' then
   begin
-    Self.DebugLn('Failed to tavel, or find farming patch %s. Skipping it', [ToString(Self.Descriptor)]);
+    if not FarmingTravel.Travel(Self.TravelMethod) then
+    begin
+      Self.DebugLn('Failed to travel via method %s for patch %s. Skipping it', [Self.TravelMethod, Self.Descriptor.ToString()]);
+      Exit;
+    end;
+  end else if not FarmingTravel.TravelToPatch(Self.Descriptor.ToString()) then
+  begin
+    Self.DebugLn('Failed to travel to farming patch %s. Skipping it', [Self.Descriptor.ToString()]);
+    Exit;
+  end;
+
+  if Self.WalkFind = [] then
+  begin
+    Self.DebugLn('Failed to find farming patch %s after travel. Skipping it', [Self.Descriptor.ToString()]);
     Exit;
   end;
 
@@ -709,20 +722,17 @@ begin
   until inactivity.IsFinished;
 end;
 
+{$IFDEF FARM_PATCH_MAIN}
 var
   patch: TRSFarmPatch;
 begin
-  FarmingTravel.Init;
-  FarmingTravel.Helper._LoadMap(TRSFarmingTravelHelper.HOSIDIOUS_MAP);
+  FarmingTravel.Init();
   ToolLeprechaun.Setup();
   XPBar.SetupInterface;
   XPBar.Setup;
   patch.Descriptor := ERSFarmPatchDescriptor.HOSIDIOUS_ALLOT_N;
-  patch.TravelMethod := ERSFarmingTravel.XERIC_TALISMAN_GLADE;
+  patch.TravelMethod := 'xeric_talisman_glade';
   patch.Seed := 'Watermelon seed';
-  showontarget(XPBar.Bounds);
-  xpbar.Read;
-  //patch.WalkInteract(['Harvest']);
-  patch.run;
-    transporter.
+  patch.Run();
 end.
+{$ENDIF}
